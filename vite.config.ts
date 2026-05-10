@@ -10,8 +10,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
       manifest: {
-        name: 'Digital Laal Vahi — Smart Ledger',
-        short_name: 'LaalVahi',
+        name: 'Paras Trading — Billing Platform',
+        short_name: 'ParasTrading',
         description: 'Premium GST Billing & Business Management Platform',
         theme_color: '#050810',
         background_color: '#050810',
@@ -39,8 +39,5 @@ export default defineConfig({
   ],
   resolve: {
     alias: { '@': path.resolve(__dirname, './src') },
-  },
-  build: {
-    chunkSizeWarningLimit: 2000,
   },
 });
