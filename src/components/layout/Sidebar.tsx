@@ -32,7 +32,7 @@ export function Sidebar() {
   const location = useLocation();
 
   return (
-    <aside className="w-68 h-dvh sticky top-0 hidden md:flex flex-col bg-bg-secondary border-r border-content-primary/5 p-6 shadow-xl">
+    <aside className="w-68 h-dvh sticky top-0 flex flex-col bg-bg-secondary border-r border-content-primary/5 p-6 shadow-xl">
       {/* Branding */}
       <div className="mb-10 px-2 flex items-center gap-3">
         <div className="w-10 h-12 rounded-xl bg-gradient-to-br from-accent-red to-accent-crimson flex items-center justify-center shadow-glow-red border border-white/10">
