@@ -4,14 +4,15 @@ import { VitePWA } from 'vite-plugin-pwa';
 import path from 'path';
 
 export default defineConfig({
+  base: '/Paras-Trading/',
   plugins: [
     react(),
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
       manifest: {
-        name: 'Paras Trading — Billing Platform',
-        short_name: 'ParasTrading',
+        name: 'Digital Laal Vahi — Smart Ledger',
+        short_name: 'LaalVahi',
         description: 'Premium GST Billing & Business Management Platform',
         theme_color: '#050810',
         background_color: '#050810',
