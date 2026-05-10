@@ -1,0 +1,131 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&family=JetBrains+Mono:wght@500&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg-primary: 253 252 251;
+  --bg-secondary: 247 243 240;
+  --bg-elevated: 255 255 255;
+  --bg-card: 255 255 255;
+  
+  --content-primary: 26 18 17;
+  --content-secondary: 74 58 57;
+  --content-muted: 140 123 122;
+  
+  --accent-red: 185 28 28;
+  --accent-crimson: 153 27 27;
+  --accent-gold: 217 119 6;
+  --accent-amber: 245 158 11;
+  
+  --success: 5 150 105;
+  --danger: 220 38 38;
+  --warning: 217 119 6;
+  
+  --shadow-glow-red: 0 0 20px rgba(185, 28, 28, 0.15);
+}
+
+.dark {
+  --bg-primary: 18 10 9;
+  --bg-secondary: 28 18 17;
+  --bg-elevated: 36 26 25;
+  --bg-card: 42 32 31;
+  
+  --content-primary: 249 247 246;
+  --content-secondary: 209 199 198;
+  --content-muted: 140 123 122;
+  
+  --accent-red: 239 68 68;
+  --accent-crimson: 248 113 113;
+  --accent-gold: 245 158 11;
+  --accent-amber: 251 191 36;
+  
+  --success: 16 185 129;
+  --danger: 248 113 113;
+  --warning: 251 191 36;
+  
+  --shadow-glow-red: 0 0 30px rgba(239, 68, 68, 0.25);
+}
+
+@layer base {
+  body {
+    @apply bg-bg-primary text-content-primary transition-colors duration-300 antialiased font-sans;
+  }
+
+  h1, h2, h3, h4 {
+    color: rgb(var(--content-primary));
+    @apply font-display tracking-tight;
+  }
+}
+
+@layer components {
+  .page-container {
+    @apply px-4 py-6 md:px-8 md:py-10 max-w-7xl mx-auto min-h-dvh;
+  }
+
+  .glass-card {
+    background-color: rgb(var(--bg-card));
+    @apply border border-content-primary/5 rounded-3xl shadow-lg dark:shadow-card backdrop-blur-md transition-all duration-300;
+  }
+
+  .glass-card-hover {
+    @apply glass-card hover:border-accent-red/30 hover:shadow-xl dark:hover:shadow-card-hover hover:-translate-y-1 cursor-pointer;
+  }
+
+  .section-title {
+    color: rgb(var(--content-primary));
+    @apply text-lg font-bold tracking-tight mb-4;
+  }
+
+  .input-field {
+    @apply w-full bg-bg-elevated border border-content-primary/10 rounded-2xl px-4 py-3.5 text-sm focus:outline-none focus:border-accent-red focus:ring-4 focus:ring-accent-red focus:ring-opacity-10 transition-all duration-300 placeholder:text-content-muted;
+  }
+  
+  .btn-primary {
+    @apply bg-gradient-to-r from-accent-red to-accent-crimson text-white font-bold rounded-2xl px-6 py-3.5 flex items-center justify-center gap-2 hover:opacity-90 active:scale-[0.98] transition-all duration-300 shadow-glow-red;
+  }
+
+  .btn-gold {
+    @apply bg-gradient-to-r from-accent-gold to-accent-amber text-white font-bold rounded-2xl px-6 py-3.5 flex items-center justify-center gap-2 hover:opacity-90 active:scale-[0.98] transition-all duration-300;
+  }
+
+  .card-premium {
+    @apply bg-bg-card border border-content-primary/5 rounded-[2.5rem] p-6 shadow-xl hover:shadow-2xl transition-all duration-500 hover:-translate-y-1;
+  }
+
+  .amount {
+    @apply font-mono tracking-tight;
+  }
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Tab Active Indicator Shadow */
+.nav-active-glow {
+  box-shadow: 0 0 15px rgb(var(--accent-red) / 0.4);
+}
+
+/* Mobile Bottom Navigation Styles */
+.bottom-nav {
+  @apply fixed bottom-0 left-0 right-0 h-16 md:hidden flex items-center justify-around z-40 bg-bg-secondary/80 backdrop-blur-xl border-t border-content-primary/5 transition-colors duration-300;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.nav-item {
+  @apply flex flex-col items-center justify-center gap-1 text-[10px] font-bold uppercase tracking-widest text-content-muted transition-all duration-300;
+}
+
+.nav-item.active {
+  @apply text-accent-red;
+}
+
+.nav-fab {
+  @apply w-14 h-14 rounded-2xl bg-gradient-to-br from-accent-red to-accent-crimson text-white flex items-center justify-center shadow-glow-red border border-white/20;
+}

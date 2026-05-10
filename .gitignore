@@ -1,0 +1,24 @@
+# Environment
+.env
+.env.local
+.env.*
+!.env.example
+
+# Build
+dist
+dist-ssr
+*.local
+
+# Capacitor/Android
+android/app/build
+android/.gradle
+android/local.properties
+ios/App/build
+ios/App/Pods
+
+# Editor
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+node_modules
