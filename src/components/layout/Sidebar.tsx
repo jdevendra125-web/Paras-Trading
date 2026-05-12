@@ -24,12 +24,11 @@ import { ThemeToggle } from './ThemeToggle';
 const NAV_ITEMS = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/' },
   { icon: FileText, label: 'Invoices', path: '/invoices' },
-  { icon: Users, label: 'Customers', path: '/customers' },
+  { icon: Database, label: 'Masters', path: '/masters' },
   { icon: Clock, label: 'Outstandings', path: '/outstandings' },
   { icon: Receipt, label: 'Receipts', path: '/receipts' },
   { icon: PieChart, label: 'Reports', path: '/reports' },
   { icon: ShieldCheck, label: 'Bank Statement Import', path: '/import' },
-  { icon: Database, label: 'Bank Accounts', path: '/bank-accounts' },
   { icon: Settings, label: 'Settings', path: '/settings' },
   { icon: HelpCircle, label: 'Help', path: '/help' },
 ];

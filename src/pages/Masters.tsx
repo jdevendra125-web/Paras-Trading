@@ -1,11 +1,12 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Package, Landmark } from 'lucide-react';
+import { Package, Landmark, Users } from 'lucide-react';
 import { PageHeader } from '../components/layout/PageHeader';
 
 export function Masters() {
   const options = [
+    { label: 'Customers', subtitle: 'Manage your party contacts', path: '/customers', icon: Users, color: 'text-accent-gold', bg: 'bg-accent-gold/10', border: 'border-accent-gold/20' },
     { label: 'Items Master', subtitle: 'Products, HSN codes, GST rates', path: '/masters/items', icon: Package, color: 'text-accent-violet', bg: 'bg-accent-violet/10', border: 'border-accent-violet/20' },
     { label: 'Bank Accounts', subtitle: 'Manage bank accounts', path: '/bank-accounts', icon: Landmark, color: 'text-accent-blue', bg: 'bg-accent-blue/10', border: 'border-accent-blue/20' },
   ];

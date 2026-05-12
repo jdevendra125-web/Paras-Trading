@@ -12,9 +12,9 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 export function Button({ variant = 'primary', size = 'md', loading, icon, children, className = '', ...props }: ButtonProps) {
   const base = 'inline-flex items-center justify-center gap-2 font-semibold rounded-2xl transition-all duration-200 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed select-none';
   const variants = {
-    primary: 'bg-gradient-to-r from-accent-blue to-accent-indigo text-white shadow-glow-red-blue hover:opacity-90',
-    secondary: 'bg-bg-elevated border border-content-primary/10 text-content-primary hover:border-accent-blue/30 hover:bg-content-primary/5',
-    danger: 'bg-gradient-to-r from-danger to-red-700 text-white shadow-glow-red-red hover:opacity-90',
+    primary: 'bg-gradient-to-r from-accent-red to-accent-crimson text-white shadow-glow-red hover:opacity-90',
+    secondary: 'bg-bg-elevated border border-content-primary/10 text-content-primary hover:border-accent-red/30 hover:bg-content-primary/5',
+    danger: 'bg-gradient-to-r from-danger to-red-700 text-white shadow-glow-red hover:opacity-90',
     ghost: 'text-content-muted hover:text-content-primary hover:bg-content-primary/5',
     success: 'bg-gradient-to-r from-success to-green-600 text-white hover:opacity-90',
   };
