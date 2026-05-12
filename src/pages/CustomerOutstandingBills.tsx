@@ -63,7 +63,7 @@ export function CustomerOutstandingBills() {
     setDownloading(true);
     try {
       printRef.current.style.display = 'block';
-      const canvas = await html2canvas(printRef.current, { scale: 2, backgroundColor: '#ffffff' });
+      const canvas = await html2canvas(printRef.current, { scale: 5, backgroundColor: '#ffffff' });
       printRef.current.style.display = 'none';
 
       const imgData = canvas.toDataURL('image/png');

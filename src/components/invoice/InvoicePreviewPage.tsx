@@ -49,14 +49,15 @@ export function InvoicePreviewPage({ data, onEdit }: Props) {
   const capturePDF = async () => {
     if (!printRef.current) return null;
     return await html2canvas(printRef.current, {
-      scale: 2,
+      scale: 5, // ~600 DPI quality
       backgroundColor: '#fff',
       useCORS: true,
-      windowWidth: printRef.current.scrollWidth,
-      windowHeight: printRef.current.scrollHeight,
+      windowWidth: 1024,
       onclone: (doc) => {
         const el = doc.getElementById('invoice-print-content');
         if (el) {
+          el.style.width = '1024px';
+          el.style.maxWidth = '1024px';
           let p = el.parentElement;
           while (p && p.tagName !== 'BODY') {
             p.style.overflow = 'visible';
@@ -143,7 +144,9 @@ export function InvoicePreviewPage({ data, onEdit }: Props) {
       </div>
 
       {/* Invoice Document */}
-      <div id="invoice-print-content" ref={printRef} className="bg-white text-gray-900 rounded-2xl overflow-hidden print:rounded-none" style={{ fontFamily: 'Arial, sans-serif', fontSize: '12px' }}>
+      <div className="w-full overflow-x-auto pb-6 hide-scrollbar">
+        <div className="min-w-[800px] w-full mx-auto">
+          <div id="invoice-print-content" ref={printRef} className="bg-white text-gray-900 rounded-2xl overflow-hidden print:rounded-none shadow-sm" style={{ fontFamily: 'Arial, sans-serif', fontSize: '12px' }}>
         {/* Header */}
         <div className="px-8 py-8 border-b border-gray-100">
           <div className="flex justify-between items-start">
@@ -318,6 +321,8 @@ export function InvoicePreviewPage({ data, onEdit }: Props) {
             <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Authorised Signatory</p>
           </div>
         </div>
+      </div>
+      </div>
       </div>
     </div>
   );

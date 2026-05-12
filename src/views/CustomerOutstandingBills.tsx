@@ -99,7 +99,7 @@ export function CustomerOutstandingBills() {
     if (!printRef.current || !customer) return;
     
     try {
-      const canvas = await html2canvas(printRef.current, { scale: 2 });
+      const canvas = await html2canvas(printRef.current, { scale: 5 });
       const imgData = canvas.toDataURL('image/png');
       const pdf = new jsPDF('p', 'mm', 'a4');
       const pdfWidth = pdf.internal.pageSize.getWidth();
