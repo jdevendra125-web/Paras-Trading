@@ -130,7 +130,7 @@ export function InvoiceForm({ data, onChange, onGenerate, defaultsLoading = fals
       <div className="glass-card p-4 mb-3">
         <div className="grid grid-cols-2 gap-3">
           <Input label="Invoice No" value={data.invoiceNo} onChange={set('invoiceNo')} />
-          <Input label="Date of Supply" type="date" value={data.dateOfSupply} onChange={set('dateOfSupply')} />
+          <Input label="Date of Supply" type="date" value={data.dateOfSupply} onChange={(e) => { set('dateOfSupply')(e); e.target.blur(); }} />
         </div>
       </div>
 
@@ -213,7 +213,7 @@ export function InvoiceForm({ data, onChange, onGenerate, defaultsLoading = fals
               <div className="space-y-3 pt-1">
                 <div className="grid grid-cols-2 gap-3">
                   <Input label="PO No" value={data.poNo} onChange={set('poNo')} placeholder="PO number" />
-                  <Input label="PO Date" type="date" value={data.poDate} onChange={set('poDate')} />
+                  <Input label="PO Date" type="date" value={data.poDate} onChange={(e) => { set('poDate')(e); e.target.blur(); }} />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <Input label="Vehicle No" value={data.vehicleNo} onChange={set('vehicleNo')} placeholder="MH-12-AB-1234" className="uppercase" />
