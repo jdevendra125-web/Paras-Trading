@@ -181,6 +181,7 @@ function AppLayout() {
         const isDark = theme === 'dark';
         await StatusBar.setStyle({ style: isDark ? Style.Dark : Style.Light });
         await StatusBar.setBackgroundColor({ color: isDark ? '#120A09' : '#FDFCFB' });
+        await StatusBar.setOverlaysWebView({ overlay: false }).catch(() => {});
         if (NavigationBar) {
           await (NavigationBar as any).set({ color: isDark ? '#1C1211' : '#FFFFFF', darkButtons: !isDark });
         }

@@ -51,6 +51,7 @@
 @layer base {
   body {
     @apply bg-bg-primary text-content-primary transition-colors duration-300 antialiased font-sans;
+    padding-top: env(safe-area-inset-top);
   }
 
   h1, h2, h3, h4 {
