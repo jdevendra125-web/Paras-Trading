@@ -90,11 +90,6 @@ export function InvoicePreviewPage({ data, onEdit }: Props) {
     } finally { setDownloading(false); }
   };
 
-  const handleWhatsApp = () => {
-    const text = `Greetings from ${settings?.companyName || 'Paras Trading'}.\n\n*TAX INVOICE*\nInvoice No: ${data.invoiceNo}\nDate: ${data.dateOfSupply}\nAmount: ${formatCurrency(total)}\n\nPlease find the details below.\nThank you!`;
-    shareToWhatsApp(data.receiverPhone || '', text);
-  };
-
   const handleSharePDF = async () => {
     if (!printRef.current) return;
     setDownloading(true);
