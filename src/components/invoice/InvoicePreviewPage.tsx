@@ -135,26 +135,26 @@ export function InvoicePreviewPage({ data, onEdit }: Props) {
               title: `Invoice ${data.invoiceNo}`,
               text: `Greetings from ${settings?.companyName || 'Registered'}.\n\nPlease find attached Invoice No: ${data.invoiceNo} for ${formatCurrency(total)}.`
             });
-          } catch (shareErr: any) {
-            if (shareErr.name === 'AbortError' || (shareErr.message && shareErr.message.toLowerCase().includes('cancel'))) {
-              return; // User cancelled
+            } catch (shareErr: any) {
+              if (shareErr.name === 'AbortError' || (shareErr.message && shareErr.message.toLowerCase().includes('cancel'))) {
+                return; // User cancelled
+              }
+              alert(`Share failed: ${shareErr.message || 'Device unsupported'}`);
             }
-            handleWhatsApp();
+          } else {
+            alert('Web Share API is not supported on this browser.');
           }
-        } else {
-          handleWhatsApp();
         }
+      } catch (err: any) {
+        console.error('Error sharing PDF:', err);
+        if (err.name === 'AbortError' || (err.message && err.message.toLowerCase().includes('cancel'))) {
+          return;
+        }
+        alert(`Failed to generate PDF: ${err.message || 'Unknown error'}`);
+      } finally { 
+        setDownloading(false); 
       }
-    } catch (err: any) {
-      console.error('Error sharing PDF:', err);
-      if (err.name === 'AbortError' || (err.message && err.message.toLowerCase().includes('cancel'))) {
-        return;
-      }
-      handleWhatsApp();
-    } finally { 
-      setDownloading(false); 
-    }
-  };
+    };
 
   const Row = ({ label, value, bold }: { label: string; value: string; bold?: boolean }) => (
     <tr className={bold ? 'font-bold' : ''}>
