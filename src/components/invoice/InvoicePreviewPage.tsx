@@ -66,6 +66,37 @@ export function InvoicePreviewPage({ data, onEdit }: Props) {
     shareToWhatsApp(data.receiverPhone || '', text);
   };
 
+  const handleSharePDF = async () => {
+    if (!printRef.current) return;
+    setDownloading(true);
+    try {
+      const canvas = await html2canvas(printRef.current, { scale: 2, backgroundColor: '#fff', useCORS: true });
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+      const w = pdf.internal.pageSize.getWidth();
+      const h = (canvas.height * w) / canvas.width;
+      pdf.addImage(imgData, 'PNG', 0, 0, w, h);
+      
+      const pdfBlob = pdf.output('blob');
+      const file = new File([pdfBlob], `${data.invoiceNo.replace(/\//g, '-')}.pdf`, { type: 'application/pdf' });
+      
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          files: [file],
+          title: `Invoice ${data.invoiceNo}`,
+          text: `Greetings from ${settings?.companyName || 'Registered'}.\n\nPlease find attached Invoice No: ${data.invoiceNo} for ${formatCurrency(total)}.`
+        });
+      } else {
+        handleWhatsApp();
+      }
+    } catch (err) {
+      console.error('Error sharing PDF:', err);
+      handleWhatsApp();
+    } finally { 
+      setDownloading(false); 
+    }
+  };
+
   const Row = ({ label, value, bold }: { label: string; value: string; bold?: boolean }) => (
     <tr className={bold ? 'font-bold' : ''}>
       <td className="py-1 text-xs text-slate-600 pr-4">{label}</td>
@@ -76,12 +107,13 @@ export function InvoicePreviewPage({ data, onEdit }: Props) {
   return (
     <div className="page-container">
       {/* Action Buttons */}
-      <div className="flex gap-2 mb-4 no-print overflow-x-auto pb-1 scrollbar-hide">
+      <div className="flex gap-2 mb-4 no-print overflow-x-auto pb-1 scrollbar-hide items-center w-full">
         <button onClick={() => navigate(-1)} className="btn-secondary min-w-[80px] text-xs py-2">← Back</button>
         {onEdit && <button onClick={onEdit} className="btn-secondary min-w-[80px] text-xs py-2"><Pencil size={12} /> Edit</button>}
-        <button onClick={handlePrint} className="btn-secondary min-w-[80px] text-xs py-2"><Printer size={12} /> Print</button>
-        <button onClick={handleWhatsApp} className="btn-secondary min-w-[100px] text-xs py-2 text-neon-green border-neon-green/20"><Share2 size={12} /> WhatsApp</button>
-        <Button onClick={handleDownload} loading={downloading} size="sm" className="min-w-[80px] text-xs py-2" icon={<Download size={12} />}>PDF</Button>
+        <button onClick={handlePrint} className="btn-secondary min-w-[80px] text-xs py-2 hidden sm:flex items-center gap-1"><Printer size={12} /> Print</button>
+        <button onClick={handleDownload} className="btn-secondary min-w-[80px] text-xs py-2 flex items-center gap-1"><Download size={12} /> Save</button>
+        <div className="flex-1" />
+        <Button onClick={handleSharePDF} loading={downloading} size="sm" className="btn-primary min-w-[120px] text-xs py-2 bg-[#25D366] hover:bg-[#1ebe5d] text-white border-none shadow-lg shadow-[#25D366]/20" icon={<Share2 size={12} />}>Share PDF</Button>
       </div>
 
       {/* Invoice Document */}

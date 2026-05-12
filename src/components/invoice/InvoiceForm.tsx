@@ -118,20 +118,22 @@ export function InvoiceForm({ data, onChange, onGenerate, defaultsLoading = fals
       />
 
       {/* Invoice Type Toggle */}
-      <div className="flex gap-2 p-1 bg-bg-secondary/50 border border-content-primary/5 rounded-2xl mb-4 max-w-fit">
-        <button
-          onClick={() => onChange({ ...data, invoiceType: 'goods' })}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${!isService ? 'bg-accent-red text-white shadow-glow-red' : 'text-content-secondary hover:bg-bg-elevated'}`}
-        >
-          Product Invoice
-        </button>
-        <button
-          onClick={() => onChange({ ...data, invoiceType: 'service' })}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${isService ? 'bg-accent-red text-white shadow-glow-red' : 'text-content-secondary hover:bg-bg-elevated'}`}
-        >
-          Service Invoice
-        </button>
-      </div>
+      {!settings?.invoiceFormat && (
+        <div className="flex gap-2 p-1 bg-bg-secondary/50 border border-content-primary/5 rounded-2xl mb-4 max-w-fit">
+          <button
+            onClick={() => onChange({ ...data, invoiceType: 'goods' })}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${!isService ? 'bg-accent-red text-white shadow-glow-red' : 'text-content-secondary hover:bg-bg-elevated'}`}
+          >
+            Product Invoice
+          </button>
+          <button
+            onClick={() => onChange({ ...data, invoiceType: 'service' })}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${isService ? 'bg-accent-red text-white shadow-glow-red' : 'text-content-secondary hover:bg-bg-elevated'}`}
+          >
+            Service Invoice
+          </button>
+        </div>
+      )}
 
       {/* Invoice No & Date */}
       <div className="glass-card p-4 mb-3">
@@ -148,22 +150,12 @@ export function InvoiceForm({ data, onChange, onGenerate, defaultsLoading = fals
           <div className="mb-3">
             <label className="input-label">Select Customer</label>
             <select className="input-field" value={data.customerId || ''} onChange={e => setCustomer(e.target.value)} style={{ backgroundImage: 'none' }}>
-              <option value="" className="bg-bg-card">— Select or type manually —</option>
+              <option value="" className="bg-bg-card">— Select Customer —</option>
               <option value="ADD_NEW" className="bg-bg-card text-accent-blue font-bold">+ Add New Customer</option>
               {customers.map(c => <option key={c.id} value={c.id} className="bg-bg-card">{c.name}</option>)}
             </select>
           </div>
         )}
-        <div className="space-y-3">
-          <Input label="Name *" value={data.receiverName} onChange={set('receiverName')} placeholder="Customer name" />
-          <Input label="Address" value={data.receiverAddress} onChange={set('receiverAddress')} placeholder="Full address" />
-          <div className="grid grid-cols-2 gap-3">
-            <Input label="State" value={data.receiverState} onChange={set('receiverState')} placeholder="Maharashtra" />
-            <Input label="State Code" value={data.receiverStateCode} onChange={set('receiverStateCode')} placeholder="27" />
-          </div>
-          <Input label="GSTIN" value={data.receiverGstin} onChange={set('receiverGstin')} placeholder="27AAGHJ..." className="uppercase" />
-          <Input label="Place of Supply" value={data.placeOfSupply} onChange={set('placeOfSupply')} placeholder="Dharangaon" />
-        </div>
       </div>
 
       {/* Items */}
@@ -226,9 +218,7 @@ export function InvoiceForm({ data, onChange, onGenerate, defaultsLoading = fals
       {/* Charges */}
       <div className="glass-card p-4 mb-3">
         <div className="grid grid-cols-2 gap-3">
-          <Input label="Loading Charges" type="number" value={data.loadingCharges === '' ? '' : String(data.loadingCharges)} onChange={set('loadingCharges')} placeholder="0" />
           <Input label="Transport Charges" type="number" value={data.transportCharges === '' ? '' : String(data.transportCharges)} onChange={set('transportCharges')} placeholder="0" />
-          <Input label="Other Charges" type="number" value={data.otherCharges === '' ? '' : String(data.otherCharges)} onChange={set('otherCharges')} placeholder="0" />
           {showHamali && <Input label="Hamali" type="number" value={data.hamali === '' ? '' : String(data.hamali)} onChange={set('hamali')} placeholder="0" />}
         </div>
       </div>

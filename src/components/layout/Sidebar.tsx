@@ -55,13 +55,7 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
     <aside className="w-68 h-dvh sticky top-0 flex flex-col bg-bg-secondary border-r border-content-primary/5 p-6 shadow-xl">
       {/* Branding */}
       <div className="mb-10 px-2 flex items-center gap-3">
-        <div className="w-10 h-12 rounded-xl bg-gradient-to-br from-accent-red to-accent-crimson flex items-center justify-center shadow-glow-red border border-white/10">
-          <Book className="text-white" size={24} />
-        </div>
-        <div>
-          <h1 className="text-content-primary font-bold text-lg leading-none tracking-tight">Digital <span className="text-accent-red">Laal Vahi</span></h1>
-          <p className="text-[10px] text-accent-gold font-bold uppercase tracking-[0.2em] mt-1.5 opacity-80">Smart Ledger</p>
-        </div>
+        <img src="/logo.png" alt="Digital LaalVahi" className="h-10 object-contain" />
       </div>
 
       {/* Navigation */}
