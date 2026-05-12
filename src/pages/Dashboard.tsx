@@ -24,7 +24,7 @@ interface Stats {
 const statCards = (s: Stats) => [
   { label: 'Total Earnings', value: formatCurrency(s.totalRevenue), icon: TrendingUp, color: 'text-success', bg: 'bg-success/10', border: 'border-success/20', trend: '+12%' },
   { label: 'Total Bills', value: String(s.totalInvoices), icon: FileText, color: 'text-accent-red', bg: 'bg-accent-red/10', border: 'border-accent-red/20', trend: 'This year' },
-  { label: 'Total Parties', value: String(s.totalCustomers), icon: Users, color: 'text-accent-gold', bg: 'bg-accent-gold/10', border: 'border-accent-gold/20', trend: 'Active' },
+  { label: 'Total Customers', value: String(s.totalCustomers), icon: Users, color: 'text-accent-gold', bg: 'bg-accent-gold/10', border: 'border-accent-gold/20', trend: 'Active' },
   { label: 'Due Payment', value: formatCurrency(s.totalOutstanding), icon: IndianRupee, color: 'text-danger', bg: 'bg-danger/10', border: 'border-danger/20', trend: 'Pending' },
 ];
 
@@ -178,7 +178,7 @@ export function Dashboard() {
           <div className="grid grid-cols-2 lg:grid-cols-1 gap-4">
             {[
               { label: 'New Entry', path: '/new', icon: Plus, color: 'from-accent-red to-accent-crimson', glow: 'shadow-glow-red', desc: 'Record a new business entry' },
-              { label: 'Parties', path: '/customers', icon: Users, color: 'from-accent-gold to-accent-amber', glow: '', desc: 'Manage your party contacts' },
+              { label: 'Customers', path: '/customers', icon: Users, color: 'from-accent-gold to-accent-amber', glow: '', desc: 'Manage your customers' },
               { label: 'Outstandings', path: '/outstandings', icon: Clock, color: 'from-accent-red to-accent-crimson', glow: 'shadow-glow-red', desc: 'Track pending collections' },
               { label: 'Receipts', path: '/receipts', icon: CheckCircle, color: 'from-success to-green-600', glow: '', desc: 'Record payment completions' },
             ].map(({ label, path, icon: Icon, color, glow, desc }) => (
