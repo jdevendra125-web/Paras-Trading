@@ -56,8 +56,14 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
   return (
     <aside className="w-60 h-dvh sticky top-0 flex flex-col bg-bg-secondary border-r border-content-primary/5 p-4 shadow-xl">
       {/* Branding */}
-      <div className="mb-6 px-2 flex items-center gap-3">
-        <img src="/logo.png" alt="Digital LaalVahi" className="h-8 object-contain" />
+      <div className="mb-6 px-3 flex items-center gap-3">
+        <div className="bg-white p-1 rounded-lg shadow-sm border border-black/5">
+          <img src="/logo.png" alt="Digital LaalVahi" className="h-8 w-8 object-contain" />
+        </div>
+        <div className="flex flex-col">
+          <span className="text-[14px] font-black tracking-tight text-content-primary leading-none">Digital Laal Vahi</span>
+          <span className="text-[9px] font-bold text-accent-red tracking-widest uppercase mt-0.5">Smart Billing</span>
+        </div>
       </div>
 
       {/* Navigation */}
@@ -101,12 +107,11 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
         <div className="flex items-center gap-2">
           <button 
             onClick={signOut}
-            className="flex-1 flex items-center gap-2 px-3 py-2.5 rounded-xl text-danger hover:bg-danger/5 transition-all group font-bold text-[13px]"
+            className="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-danger hover:bg-danger/5 transition-all group font-bold text-[13px] border border-danger/10"
           >
             <LogOut size={16} className="group-hover:-translate-x-1 transition-transform" />
             <span>Sign Out</span>
           </button>
-          <ThemeToggle className="!w-9 !h-9 !rounded-xl flex-shrink-0" />
         </div>
 
         <div className="px-4 flex items-center justify-between text-[9px] text-content-muted font-bold uppercase tracking-widest opacity-60">
