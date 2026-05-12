@@ -24,6 +24,11 @@ export function Outstandings() {
   
   const [search, setSearch] = useState('');
   const [regionFilter, setRegionFilter] = useState('');
+  
+  // Advanced Filters
+  const [activeFilter, setActiveFilter] = useState<'all' | 'due'>('due');
+  const [amountFilterType, setAmountFilterType] = useState<'all' | 'gt' | 'lt'>('all');
+  const [amountFilterValue, setAmountFilterValue] = useState<string>('');
 
   const load = async () => {
     setLoading(true);
@@ -37,31 +42,44 @@ export function Outstandings() {
   const regions = useMemo(() => Array.from(new Set(customers.map(c => c.region || '').filter(Boolean))).sort(), [customers]);
 
   const outstandingData = useMemo(() => {
-    return customers
+    let results = customers
       .filter(c => !regionFilter || c.region === regionFilter)
       .filter(c => !search || c.name.toLowerCase().includes(search.toLowerCase()))
       .map(customer => {
         const customerInvoices = invoices.filter(inv => inv.customerId === customer.id);
-      const customerTxns = transactions.filter(t => t.customerId === customer.id);
+        const customerTxns = transactions.filter(t => t.customerId === customer.id);
       
-      const totalBilled = customerInvoices.reduce((s, inv) => s + (inv.totalAmount || 0), 0);
-      const totalDR = customerTxns.filter(t => t.type === 'DR').reduce((s, t) => s + t.amount, 0);
-      const totalCR = customerTxns.filter(t => t.type === 'CR').reduce((s, t) => s + t.amount, 0);
+        const totalBilled = customerInvoices.reduce((s, inv) => s + (inv.totalAmount || 0), 0);
+        const totalDR = customerTxns.filter(t => t.type === 'DR').reduce((s, t) => s + t.amount, 0);
+        const totalCR = customerTxns.filter(t => t.type === 'CR').reduce((s, t) => s + t.amount, 0);
       
-      // Outstanding = (Opening Balance + Invoices + Debit Transactions) - Credit Transactions
-      const opening = Number(customer.openingBalance) || 0;
-      const outstanding = (opening + totalBilled + totalDR) - totalCR;
+        // Outstanding = (Opening Balance + Invoices + Debit Transactions) - Credit Transactions
+        const opening = Number(customer.openingBalance) || 0;
+        const outstanding = (opening + totalBilled + totalDR) - totalCR;
 
-      return {
-        customer,
-        invoices: customerInvoices,
-        total: totalBilled + totalDR + opening,
-        paid: totalCR,
-        outstanding
-      };
-    }).filter(d => d.outstanding > 0.01) // Filter out zero or negative balances
-      .sort((a, b) => b.outstanding - a.outstanding);
-  }, [invoices, customers, transactions, search, regionFilter]);
+        return {
+          customer,
+          invoices: customerInvoices,
+          total: totalBilled + totalDR + opening,
+          paid: totalCR,
+          outstanding
+        };
+      });
+
+    if (activeFilter === 'due') {
+      results = results.filter(d => d.outstanding > 0.01);
+    }
+    
+    if (amountFilterType !== 'all' && amountFilterValue !== '') {
+      const val = parseFloat(amountFilterValue);
+      if (!isNaN(val)) {
+        if (amountFilterType === 'gt') results = results.filter(r => r.outstanding > val);
+        else if (amountFilterType === 'lt') results = results.filter(r => r.outstanding < val);
+      }
+    }
+    
+    return results.sort((a, b) => b.outstanding - a.outstanding);
+  }, [invoices, customers, transactions, search, regionFilter, activeFilter, amountFilterType, amountFilterValue]);
 
   const totalOutstanding = useMemo(() => outstandingData.reduce((s, d) => s + d.outstanding, 0), [outstandingData]);
 
@@ -103,19 +121,48 @@ export function Outstandings() {
         </motion.div>
       )}
 
-      <div className="grid grid-cols-2 gap-3 mb-4">
-        <Input 
-          label="" 
-          placeholder="Search customer..." 
-          value={search} 
-          onChange={e => setSearch(e.target.value)} 
-        />
-        <Select 
-          label="" 
-          value={regionFilter} 
-          onChange={e => setRegionFilter(e.target.value)} 
-          options={[{ value: '', label: 'All Regions' }, ...regions.map(r => ({ value: r, label: r }))]}
-        />
+      <div className="glass-card p-3 mb-4 space-y-3">
+        <div className="grid grid-cols-2 gap-3">
+          <Input 
+            label="" 
+            placeholder="Search customer..." 
+            value={search} 
+            onChange={e => setSearch(e.target.value)} 
+          />
+          <Select 
+            label="" 
+            value={regionFilter} 
+            onChange={e => setRegionFilter(e.target.value)} 
+            options={[{ value: '', label: 'All Regions' }, ...regions.map(r => ({ value: r, label: r }))]}
+          />
+        </div>
+        
+        <div className="flex gap-2 mb-2 bg-bg-secondary p-1 rounded-xl">
+          <button onClick={() => setActiveFilter('all')} className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-colors ${activeFilter === 'all' ? 'bg-accent-blue text-white' : 'text-slate-400 hover:text-white'}`}>All</button>
+          <button onClick={() => setActiveFilter('due')} className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-colors ${activeFilter === 'due' ? 'bg-neon-red text-white' : 'text-slate-400 hover:text-white'}`}>Pending Due</button>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <Select 
+            label="Amount Filter"
+            value={amountFilterType} 
+            onChange={e => setAmountFilterType(e.target.value as any)} 
+            options={[
+              { value: 'all', label: 'Any Amount' }, 
+              { value: 'gt', label: 'Greater Than (>)' }, 
+              { value: 'lt', label: 'Less Than (<)' }
+            ]}
+          />
+          {amountFilterType !== 'all' && (
+            <Input 
+              label="Value (₹)"
+              type="number"
+              placeholder="e.g. 10000" 
+              value={amountFilterValue} 
+              onChange={e => setAmountFilterValue(e.target.value)} 
+            />
+          )}
+        </div>
       </div>
 
       {loading ? <TableSkeleton rows={5} /> : outstandingData.length === 0 ? (

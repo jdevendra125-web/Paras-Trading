@@ -5,7 +5,7 @@ import { Plus, Trash2, ChevronDown, ChevronUp, Save } from 'lucide-react';
 import { PageHeader } from '../../components/layout/PageHeader';
 import { Input, Select } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
-import { getCustomers, getMasterItems, calculateInvoiceTotal, getSettings, getSuggestedItems } from '../../lib/storage';
+import { getCustomers, getMasterItems, calculateInvoiceTotal, getSettings } from '../../lib/storage';
 import { AddCustomerModal } from '../modals/AddCustomerModal';
 import { AddItemModal } from '../modals/AddItemModal';
 import { formatCurrency } from '../../lib/utils';
@@ -30,8 +30,6 @@ export function InvoiceForm({ data, onChange, onGenerate, defaultsLoading = fals
   const [settings, setSettings] = useState<UserSettings | null>(null);
   const [saving, setSaving] = useState(false);
   const [showTransport, setShowTransport] = useState(false);
-  const [frequentItems, setFrequentItems] = useState<MasterItem[]>([]);
-  const [customerItems, setCustomerItems] = useState<MasterItem[]>([]);
   const [showCustomerModal, setShowCustomerModal] = useState(false);
   const [showItemModal, setShowItemModal] = useState<{isOpen: boolean; rowId: string | null}>({isOpen: false, rowId: null});
 
@@ -44,13 +42,6 @@ export function InvoiceForm({ data, onChange, onGenerate, defaultsLoading = fals
   useEffect(() => {
     fetchMasters();
   }, [fetchMasters]);
-
-  useEffect(() => {
-    getSuggestedItems(data.customerId).then(res => {
-      setFrequentItems(res.frequent);
-      setCustomerItems(res.customerSpecific);
-    });
-  }, [data.customerId]);
 
   // Bug 8 fix: numeric charge fields are stored as number|'' not raw string
   const set = useCallback((key: keyof InvoiceData) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -181,19 +172,7 @@ export function InvoiceForm({ data, onChange, onGenerate, defaultsLoading = fals
                   <select className="input-field text-sm" value={item.description} onChange={setItem(idx, 'description')} style={{ backgroundImage: 'none' }}>
                     <option value="" className="bg-bg-card">— Select item —</option>
                     <option value="ADD_NEW" className="bg-bg-card text-accent-blue font-bold">+ Add New Item</option>
-                    {customerItems.length > 0 && (
-                      <optgroup label="⭐ Previous Purchases" className="bg-bg-card text-accent-gold">
-                        {customerItems.map(m => <option key={m.id} value={m.description} className="bg-bg-card text-white font-medium">{m.description}</option>)}
-                      </optgroup>
-                    )}
-                    {frequentItems.length > 0 && (
-                      <optgroup label="🔥 Most Sold Items" className="bg-bg-card text-accent-red">
-                        {frequentItems.map(m => <option key={m.id} value={m.description} className="bg-bg-card text-white font-medium">{m.description}</option>)}
-                      </optgroup>
-                    )}
-                    <optgroup label="All Master Items" className="bg-bg-card text-content-muted">
-                      {masterItems.map(m => <option key={m.id} value={m.description} className="bg-bg-card text-white">{m.description}</option>)}
-                    </optgroup>
+                    {masterItems.map(m => <option key={m.id} value={m.description} className="bg-bg-card text-white">{m.description}</option>)}
                   </select>
                 </div>
                 <div className="grid grid-cols-3 gap-2">

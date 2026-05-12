@@ -26,7 +26,7 @@ const NAV_ITEMS = [
   { icon: Users, label: 'Customers', path: '/customers' },
   { icon: Receipt, label: 'Receipts', path: '/receipts' },
   { icon: PieChart, label: 'Reports', path: '/reports' },
-  { icon: ShieldCheck, label: 'Bank Reconciliation', path: '/import' },
+  { icon: ShieldCheck, label: 'Bank Statement Import', path: '/import' },
   { icon: Database, label: 'Bank Accounts', path: '/bank-accounts' },
   { icon: Settings, label: 'Settings', path: '/settings' },
   { icon: HelpCircle, label: 'Help', path: '/help' },
