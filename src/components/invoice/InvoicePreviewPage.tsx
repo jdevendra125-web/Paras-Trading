@@ -157,10 +157,10 @@ export function InvoicePreviewPage({ data, onEdit }: Props) {
     <div className="page-container">
       {/* Action Buttons */}
       <div className="flex gap-2 mb-4 no-print overflow-x-auto pb-1 scrollbar-hide items-center w-full">
-        <button onClick={() => navigate(-1)} className="btn-secondary min-w-[80px] text-xs py-2">← Back</button>
-        {onEdit && <button onClick={onEdit} className="btn-secondary min-w-[80px] text-xs py-2"><Pencil size={12} /> Edit</button>}
-        <button onClick={handlePrint} className="btn-secondary min-w-[80px] text-xs py-2 hidden sm:flex items-center gap-1"><Printer size={12} /> Print</button>
-        <button onClick={handleDownload} className="btn-secondary min-w-[80px] text-xs py-2 flex items-center gap-1"><Download size={12} /> Save</button>
+        <button onClick={() => navigate(-1)} className="btn-secondary min-w-[80px] text-xs py-2 flex items-center justify-center gap-1.5">← Back</button>
+        {onEdit && <button onClick={onEdit} className="btn-secondary min-w-[80px] text-xs py-2 flex items-center justify-center gap-1.5"><Pencil size={12} /> Edit</button>}
+        <button onClick={handlePrint} className="btn-secondary min-w-[80px] text-xs py-2 hidden sm:flex items-center justify-center gap-1.5"><Printer size={12} /> Print</button>
+        <button onClick={handleDownload} className="btn-secondary min-w-[80px] text-xs py-2 flex items-center justify-center gap-1.5"><Download size={12} /> Save</button>
         <div className="flex-1" />
         <Button onClick={handleSharePDF} loading={downloading} size="sm" className="btn-primary min-w-[120px] text-xs py-2 bg-[#25D366] hover:bg-[#1ebe5d] text-white border-none shadow-lg shadow-[#25D366]/20" icon={<Share2 size={12} />}>Share PDF</Button>
       </div>
