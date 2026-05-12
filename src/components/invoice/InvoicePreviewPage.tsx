@@ -114,13 +114,13 @@ export function InvoicePreviewPage({ data, onEdit }: Props) {
         const result = await Filesystem.writeFile({
           path: fileName,
           data: base64Data,
-          directory: Directory.Cache
+          directory: Directory.Documents
         });
         
         await Share.share({
           title: `Invoice ${data.invoiceNo}`,
           text: `Greetings from ${settings?.companyName || 'Registered'}.\n\nPlease find attached Invoice No: ${data.invoiceNo} for ${formatCurrency(total)}.`,
-          url: result.uri,
+          files: [result.uri],
           dialogTitle: 'Share Invoice PDF'
         });
       } else {
