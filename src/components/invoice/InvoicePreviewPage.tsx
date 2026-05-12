@@ -46,7 +46,7 @@ export function InvoicePreviewPage({ data, onEdit }: Props) {
   const other = Number(data.otherCharges) || 0;
   const hamali = Number(data.hamali) || 0;
 
-  const isSameState = settings?.gstin?.slice(0, 2) === data.receiverStateCode;
+  const isSameState = !data.receiverGstin || settings?.gstin?.slice(0, 2) === data.receiverStateCode;
 
   
   const capturePDF = async () => {
