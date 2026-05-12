@@ -98,24 +98,27 @@ export function Login() {
         <div className="absolute -bottom-40 -right-40 w-[600px] h-[600px] rounded-full" style={{ background: 'radial-gradient(circle, rgba(217,119,6,0.05) 0%, transparent 70%)' }} />
       </div>
 
-      {/* Fixed Header */}
-      <header className="h-14 sm:h-16 flex items-center justify-between px-4 sm:px-6 bg-bg-secondary/80 backdrop-blur-xl border-b border-content-primary/5 z-50 flex-shrink-0">
-        <div className="flex items-center gap-2">
-          <img src="/logo.png" alt="Digital LaalVahi" className="h-8 sm:h-10 object-contain" />
-        </div>
-      </header>
+
 
       {/* Main Content Area - Auto Scaling to Fit */}
       <main className="flex-1 flex flex-col items-center justify-center p-4 z-10 min-h-0 overflow-y-auto">
         <div className="w-full max-w-sm flex flex-col items-center justify-center min-h-max py-4">
           
-          {/* Modern App Logo - Hidden on very small screens to save space */}
+          {/* Modern App Logo - Always visible and centered */}
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="flex flex-col items-center mb-4 sm:mb-6 text-center hidden min-[400px]:flex"
+            className="flex flex-col items-center mb-6 sm:mb-8 text-center"
           >
-            <img src="/logo.png" alt="Digital LaalVahi" className="h-24 sm:h-32 object-contain" />
+            <div className="bg-white p-2 rounded-2xl shadow-sm border border-black/5 mb-3 inline-block">
+              <img src="/logo.png" alt="Digital LaalVahi" className="h-16 sm:h-20 w-16 sm:w-20 object-contain drop-shadow-md" />
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-content-primary leading-none">
+              Digital Laal Vahi
+            </h1>
+            <p className="text-[11px] sm:text-[13px] font-bold text-accent-red tracking-[0.3em] uppercase mt-1">
+              Smart Billing
+            </p>
           </motion.div>
 
           {/* Dynamic Form Card */}
