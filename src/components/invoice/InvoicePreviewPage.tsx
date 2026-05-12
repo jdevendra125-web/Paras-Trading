@@ -353,13 +353,29 @@ export function InvoicePreviewPage({ data, onEdit }: Props) {
           <div className="flex gap-3 w-full">
             <button onClick={() => setShareReadyFile(null)} className="btn-secondary flex-1">Cancel</button>
             <button 
-              onClick={() => {
+              onClick={async () => {
                 if (shareReadyFile && navigator.share) {
-                  navigator.share({
-                    files: [shareReadyFile],
-                    title: `Invoice ${data.invoiceNo}`,
-                    text: `Greetings from ${settings?.companyName || 'Registered'}.\n\nPlease find attached Invoice No: ${data.invoiceNo} for ${formatCurrency(total)}.`
-                  }).catch(() => {});
+                  try {
+                    if (navigator.canShare && navigator.canShare({ files: [shareReadyFile] })) {
+                      await navigator.share({
+                        files: [shareReadyFile],
+                        title: `Invoice ${data.invoiceNo}`,
+                        text: `Greetings from ${settings?.companyName || 'Registered'}.\n\nPlease find attached Invoice No: ${data.invoiceNo} for ${formatCurrency(total)}.`
+                      });
+                    } else {
+                      alert("File sharing not supported on this browser. Downloading invoice instead.");
+                      const url = URL.createObjectURL(shareReadyFile);
+                      const a = document.createElement('a');
+                      a.href = url;
+                      a.download = shareReadyFile.name;
+                      a.click();
+                      URL.revokeObjectURL(url);
+                    }
+                  } catch (e: any) {
+                    if (e.name !== 'AbortError' && !(e.message && e.message.toLowerCase().includes('cancel'))) {
+                      alert("Share error: " + (e.message || "Unknown error"));
+                    }
+                  }
                 } else {
                   alert("Web Share is not supported on this browser.");
                 }
