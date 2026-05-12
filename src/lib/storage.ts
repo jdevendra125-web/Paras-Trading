@@ -1,4 +1,4 @@
-import type { InvoiceData, Customer, MasterItem, BankAccount, Transaction, UserSettings } from '../types';
+import type { InvoiceData, Customer, MasterItem, BankAccount, Transaction, UserSettings, BankImportSession } from '../types';
 import { supabase } from './supabase';
 
 export const calculateInvoiceTotal = (invoice: any): number => {
@@ -68,8 +68,8 @@ export const saveInvoice = async (invoice: InvoiceData): Promise<void> => {
     receiver_email: invoice.receiverEmail
   };
 
-  // Check if invoice exists for this user
-  const { data: existing } = await supabase.from('invoices').select('invoice_no').eq('invoice_no', invoice.invoiceNo).single();
+  // Check if invoice exists for this specific user (scope by user_id to avoid cross-user collision)
+  const { data: existing } = await supabase.from('invoices').select('invoice_no').eq('invoice_no', invoice.invoiceNo).eq('user_id', authData.user.id).single();
 
   let error;
   if (existing) {
@@ -186,7 +186,8 @@ export const getCustomers = async (): Promise<Customer[]> => {
     gstin: row.gstin,
     region: row.region || '',
     phone: row.phone || '',
-    email: row.email || ''
+    email: row.email || '',
+    openingBalance: row.opening_balance || 0
   }));
 };
 
@@ -215,7 +216,8 @@ export const addCustomer = async (customer: Omit<Customer, 'id'>): Promise<void>
     gstin: customer.gstin,
     region: customer.region,
     phone: customer.phone,
-    email: customer.email
+    email: customer.email,
+    opening_balance: customer.openingBalance || 0
   });
   if (error) throw error;
 };
@@ -230,6 +232,7 @@ export const updateCustomer = async (id: string, customer: Partial<Omit<Customer
   if (customer.region !== undefined) updates.region = customer.region;
   if (customer.phone !== undefined) updates.phone = customer.phone;
   if (customer.email !== undefined) updates.email = customer.email;
+  if (customer.openingBalance !== undefined) updates.opening_balance = customer.openingBalance;
 
   const { error } = await supabase.from('customers').update(updates).eq('id', id);
   if (error) throw error;
@@ -307,36 +310,114 @@ export const updateBankAccount = async (id: string, account: Partial<Omit<BankAc
 };
 
 export const getTransactions = async (): Promise<Transaction[]> => {
-  const { data, error } = await supabase.from('transactions').select('*').order('date', { ascending: false });
-  if (error) {
-    console.error('Error fetching transactions:', error);
-    return [];
+  try {
+    const { data, error } = await supabase.from('transactions').select('*').order('date', { ascending: false });
+    if (error) throw error;
+    return data.map(row => ({
+      id: row.id,
+      date: row.date,
+      amount: row.amount,
+      type: row.type,
+      mode: row.mode,
+      bankAccountId: row.bank_account_id,
+      customerId: row.customer_id,
+      particulars: row.particulars,
+      refNo: row.ref_no,
+      status: row.status,
+      confidence: row.confidence,
+      suggestedCustomerId: row.suggested_customer_id,
+      importSessionId: row.import_session_id,
+      rawNarration: row.raw_narration
+    }));
+  } catch (err) {
+    console.warn('Transactions fetching error, falling back to local storage');
+    const local = localStorage.getItem('local_transactions');
+    return local ? JSON.parse(local) : [];
   }
-  return data.map(row => ({
-    id: row.id,
-    date: row.date,
-    amount: row.amount,
-    type: row.type,
-    mode: row.mode,
-    bankAccountId: row.bank_account_id,
-    customerId: row.customer_id,
-    particulars: row.particulars,
-    refNo: row.ref_no
-  }));
+};
+
+export const getBankImportSessions = async (): Promise<BankImportSession[]> => {
+  try {
+    const { data, error } = await supabase.from('bank_import_sessions').select('*').order('date', { ascending: false });
+    if (error) throw error;
+    return data.map(row => ({
+      id: row.id,
+      date: row.date,
+      fileName: row.file_name,
+      bankAccountId: row.bank_account_id,
+      totalTransactions: row.total_transactions,
+      reconciledCount: row.reconciled_count
+    }));
+  } catch (err) {
+    console.warn('Bank import sessions table missing, falling back to local storage');
+    const local = localStorage.getItem('bank_import_sessions');
+    return local ? JSON.parse(local) : [];
+  }
+};
+
+export const addBankImportSession = async (session: Omit<BankImportSession, 'id'>): Promise<string> => {
+  try {
+    const { data, error } = await supabase.from('bank_import_sessions').insert({
+      date: session.date,
+      file_name: session.fileName,
+      bank_account_id: session.bankAccountId,
+      total_transactions: session.totalTransactions,
+      reconciled_count: session.reconciledCount
+    }).select('id').single();
+    if (error) throw error;
+    return data.id;
+  } catch (err) {
+    console.warn('Could not save to Supabase, saving to local storage');
+    const local = localStorage.getItem('bank_import_sessions');
+    const sessions = local ? JSON.parse(local) : [];
+    const newSession = { ...session, id: `local-${Date.now()}` };
+    sessions.unshift(newSession);
+    localStorage.setItem('bank_import_sessions', JSON.stringify(sessions));
+    return newSession.id;
+  }
+};
+
+export const updateBankImportSession = async (id: string, updates: Partial<BankImportSession>): Promise<void> => {
+  try {
+    const payload: any = {};
+    if (updates.reconciledCount !== undefined) payload.reconciled_count = updates.reconciledCount;
+    const { error } = await supabase.from('bank_import_sessions').update(payload).eq('id', id);
+    if (error) throw error;
+  } catch (err) {
+    const local = localStorage.getItem('bank_import_sessions');
+    if (local) {
+      const sessions = JSON.parse(local);
+      const updated = sessions.map((s: any) => s.id === id ? { ...s, ...updates } : s);
+      localStorage.setItem('bank_import_sessions', JSON.stringify(updated));
+    }
+  }
 };
 
 export const addTransaction = async (transaction: Omit<Transaction, 'id'>): Promise<void> => {
-  const { error } = await supabase.from('transactions').insert({
-    date: transaction.date,
-    amount: transaction.amount,
-    type: transaction.type,
-    mode: transaction.mode,
-    bank_account_id: transaction.bankAccountId || null,
-    customer_id: transaction.customerId || null,
-    particulars: transaction.particulars,
-    ref_no: transaction.refNo
-  });
-  if (error) throw error;
+  try {
+    const { error } = await supabase.from('transactions').insert({
+      date: transaction.date,
+      amount: transaction.amount,
+      type: transaction.type,
+      mode: transaction.mode,
+      bank_account_id: transaction.bankAccountId || null,
+      customer_id: transaction.customerId || null,
+      particulars: transaction.particulars,
+      ref_no: transaction.refNo,
+      status: transaction.status || 'pending',
+      confidence: transaction.confidence || 0,
+      suggested_customer_id: transaction.suggestedCustomerId || null,
+      import_session_id: transaction.importSessionId || null,
+      raw_narration: transaction.rawNarration || null
+    });
+    if (error) throw error;
+  } catch (err) {
+    console.warn('Could not save transaction to Supabase, saving locally');
+    const local = localStorage.getItem('local_transactions');
+    const txns = local ? JSON.parse(local) : [];
+    txns.unshift({ ...transaction, id: `local-txn-${Date.now()}` });
+    localStorage.setItem('local_transactions', JSON.stringify(txns));
+  }
 };
 
 export const updateTransaction = async (id: string, transaction: Partial<Omit<Transaction, 'id'>>): Promise<void> => {
@@ -349,6 +430,11 @@ export const updateTransaction = async (id: string, transaction: Partial<Omit<Tr
   if (transaction.customerId !== undefined) updates.customer_id = transaction.customerId || null;
   if (transaction.particulars !== undefined) updates.particulars = transaction.particulars;
   if (transaction.refNo !== undefined) updates.ref_no = transaction.refNo;
+  if (transaction.status !== undefined) updates.status = transaction.status;
+  if (transaction.confidence !== undefined) updates.confidence = transaction.confidence;
+  if (transaction.suggestedCustomerId !== undefined) updates.suggested_customer_id = transaction.suggestedCustomerId;
+  if (transaction.importSessionId !== undefined) updates.import_session_id = transaction.importSessionId;
+  if (transaction.rawNarration !== undefined) updates.raw_narration = transaction.rawNarration;
 
   const { error } = await supabase.from('transactions').update(updates).eq('id', id);
   if (error) throw error;
@@ -387,6 +473,44 @@ export const getMostSellingItem = async (): Promise<MasterItem | null> => {
     return items.find(i => i.description === maxItemDesc) || null;
   }
   return null;
+};
+
+export const getSuggestedItems = async (customerId?: string): Promise<{ frequent: MasterItem[], customerSpecific: MasterItem[] }> => {
+  const [invoices, allItems] = await Promise.all([getInvoices(), getMasterItems()]);
+  
+  // Frequent items
+  const itemCounts: Record<string, number> = {};
+  invoices.forEach(inv => {
+    (inv.items || []).forEach(item => {
+      if (item.description) itemCounts[item.description] = (itemCounts[item.description] || 0) + 1;
+    });
+  });
+
+  const frequentDescs = Object.entries(itemCounts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 10)
+    .map(e => e[0]);
+
+  // Customer specific items
+  const customerSpecificDescs: string[] = [];
+  if (customerId) {
+    const customerInvoices = invoices.filter(inv => inv.customerId === customerId);
+    const customerItemCounts: Record<string, number> = {};
+    customerInvoices.forEach(inv => {
+      (inv.items || []).forEach(item => {
+        if (item.description) customerItemCounts[item.description] = (customerItemCounts[item.description] || 0) + 1;
+      });
+    });
+    customerSpecificDescs.push(...Object.entries(customerItemCounts)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(e => e[0]));
+  }
+
+  return {
+    frequent: allItems.filter(i => frequentDescs.includes(i.description)),
+    customerSpecific: allItems.filter(i => customerSpecificDescs.includes(i.description))
+  };
 };
 
 export const getSettings = async (): Promise<UserSettings | null> => {

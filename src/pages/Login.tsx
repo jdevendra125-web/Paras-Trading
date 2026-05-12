@@ -87,163 +87,202 @@ export function Login() {
     }
   };
 
+  const [showFAQ, setShowFAQ] = useState(false);
+  const [showContact, setShowContact] = useState(false);
+
   return (
-    <div className="min-h-dvh flex flex-col bg-bg-primary overflow-hidden relative transition-colors duration-300">
+    <div className="h-full flex flex-col bg-bg-primary relative transition-colors duration-300 overflow-hidden">
       {/* Dynamic Background glows */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -left-40 w-[600px] h-[600px] rounded-full bg-accent-red/5 blur-[120px]" />
-        <div className="absolute -bottom-40 -right-40 w-[600px] h-[600px] rounded-full bg-accent-gold/5 blur-[120px]" />
+      <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
+        <div className="absolute -top-40 -left-40 w-[600px] h-[600px] rounded-full" style={{ background: 'radial-gradient(circle, rgba(185,28,28,0.05) 0%, transparent 70%)' }} />
+        <div className="absolute -bottom-40 -right-40 w-[600px] h-[600px] rounded-full" style={{ background: 'radial-gradient(circle, rgba(217,119,6,0.05) 0%, transparent 70%)' }} />
       </div>
 
-      <div className="flex-1 flex flex-col items-center justify-center px-5 py-12 relative z-10">
-        {/* Premium Ledger Image */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-8 relative group"
-        >
-          <div className="w-48 h-32 rounded-3xl overflow-hidden border-2 border-accent-gold/20 shadow-2xl relative">
-            <img 
-              src="/laal_vahi_ledger.png" 
-              alt="Laal Vahi Ledger" 
-              className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+      {/* Fixed Header */}
+      <header className="h-14 sm:h-16 flex items-center justify-between px-4 sm:px-6 bg-bg-secondary/80 backdrop-blur-xl border-b border-content-primary/5 z-50 flex-shrink-0">
+        <div className="flex items-center gap-2">
+          <div className="w-7 h-8 sm:w-8 sm:h-10 rounded-lg bg-gradient-to-br from-accent-red to-accent-crimson flex items-center justify-center shadow-glow-red text-white">
+            <Book size={16} />
           </div>
-          <div className="absolute -bottom-3 -right-3 w-12 h-12 rounded-2xl bg-accent-red flex items-center justify-center shadow-glow-red text-white">
-            <Book size={24} />
-          </div>
-        </motion.div>
+          <span className="font-bold text-sm sm:text-base tracking-tight text-content-primary">Digital <span className="text-accent-red">Laal Vahi</span></span>
+        </div>
+      </header>
 
-        {/* Modern App Logo */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.6, ease: "easeOut" }}
-          className="flex flex-col items-center mb-8 text-center"
-        >
-          <h1 className="text-4xl font-bold font-display text-content-primary tracking-tight">Digital <span className="text-accent-red">Laal Vahi</span></h1>
-          <p className="text-sm text-accent-gold font-bold uppercase tracking-widest mt-2">Smart Digital Business Book</p>
-        </motion.div>
+      {/* Main Content Area - Auto Scaling to Fit */}
+      <main className="flex-1 flex flex-col items-center justify-center p-4 z-10 min-h-0 overflow-y-auto">
+        <div className="w-full max-w-sm flex flex-col items-center justify-center min-h-max py-4">
+          
+          {/* Modern App Logo - Hidden on very small screens to save space */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="flex flex-col items-center mb-4 sm:mb-6 text-center hidden min-[400px]:flex"
+          >
+            <h1 className="text-2xl sm:text-3xl font-bold font-display text-content-primary tracking-tight">Digital <span className="text-accent-red">Laal Vahi</span></h1>
+            <p className="text-[10px] sm:text-xs text-accent-gold font-bold uppercase tracking-widest mt-1">Smart Business Book</p>
+          </motion.div>
 
-        {/* Dynamic Form Card */}
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.2 }}
-          className="w-full max-w-sm"
-        >
-          <div className="bg-bg-card border border-content-primary/10 rounded-[2.5rem] p-8 shadow-2xl relative overflow-hidden backdrop-blur-xl">
-            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-accent-red to-transparent opacity-50" />
-            
-            <h2 className="text-xl font-bold text-content-primary mb-1 text-center">
-              {forgotPw ? 'Reset Password' : isSignUp ? 'New Account' : 'Welcome Back'}
-            </h2>
-            <p className="text-xs text-content-secondary mb-8 text-center">
-              {forgotPw ? 'Enter email to get reset link' : isSignUp ? 'Create your digital red book today' : 'Sign in to manage your business ledger'}
-            </p>
+          {/* Dynamic Form Card */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="w-full flex-shrink-0"
+          >
+            <div className="bg-bg-card border border-content-primary/10 rounded-[2rem] p-6 sm:p-8 shadow-2xl relative overflow-hidden backdrop-blur-xl">
+              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-accent-red to-transparent opacity-50" />
+              
+              <h2 className="text-lg sm:text-xl font-bold text-content-primary mb-1 text-center">
+                {forgotPw ? 'Reset Password' : isSignUp ? 'New Account' : 'Welcome Back'}
+              </h2>
+              <p className="text-[10px] sm:text-xs text-content-secondary mb-5 text-center">
+                {forgotPw ? 'Enter email to get reset link' : isSignUp ? 'Create your digital red book today' : 'Sign in to manage your ledger'}
+              </p>
 
-            <form onSubmit={forgotPw ? handleForgotPassword : handleSubmit} className="space-y-5">
-              {/* Honeypot field (hidden) */}
-              <input type="text" value={honeypot} onChange={e => setHoneypot(e.target.value)} className="hidden" tabIndex={-1} autoComplete="off" />
+              <form onSubmit={forgotPw ? handleForgotPassword : handleSubmit} className="space-y-4">
+                <input type="text" value={honeypot} onChange={e => setHoneypot(e.target.value)} className="hidden" tabIndex={-1} autoComplete="off" />
 
-              <div className="space-y-2">
-                <label className="text-[11px] font-bold text-content-muted uppercase tracking-wider ml-1">Email Terminal</label>
-                <div className="relative">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-content-muted"><Mail size={16} /></span>
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={e => setEmail(e.target.value)}
-                    className="input-field pl-12"
-                    placeholder="name@company.com"
-                    required
-                  />
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-content-muted uppercase tracking-wider ml-1">Email Terminal</label>
+                  <div className="relative">
+                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-content-muted"><Mail size={14} /></span>
+                    <input
+                      type="email"
+                      value={email}
+                      onChange={e => setEmail(e.target.value)}
+                      className="input-field pl-10 py-2.5 text-sm"
+                      placeholder="name@company.com"
+                      required
+                    />
+                  </div>
                 </div>
-              </div>
+
+                {!forgotPw && (
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between px-1">
+                      <label className="text-[10px] font-bold text-content-muted uppercase tracking-wider">Username</label>
+                      {!isSignUp && (
+                        <button type="button" onClick={() => setForgotPw(true)} className="text-[10px] text-accent-blue hover:underline font-bold">Forgot?</button>
+                      )}
+                    </div>
+                    <div className="relative">
+                      <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-content-muted"><Lock size={14} /></span>
+                      <input
+                        type={showPw ? 'text' : 'password'}
+                        value={password}
+                        onChange={e => setPassword(e.target.value)}
+                        className="input-field pl-10 pr-10 py-2.5 text-sm"
+                        placeholder="••••••••"
+                        required={!forgotPw}
+                      />
+                      <button type="button" onClick={() => setShowPw(!showPw)} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-content-muted hover:text-content-primary transition-colors">
+                        {showPw ? <EyeOff size={14} /> : <Eye size={14} />}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {error && (
+                  <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="flex items-center gap-2 px-3 py-2 rounded-xl bg-danger/10 border border-danger/20">
+                    <AlertCircle size={14} className="text-danger flex-shrink-0" />
+                    <p className="text-[10px] sm:text-xs text-danger font-bold leading-tight">{error}</p>
+                  </motion.div>
+                )}
+
+                {message && (
+                  <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="flex flex-col gap-1 px-3 py-2 rounded-xl bg-accent-blue/10 border border-accent-blue/20">
+                    <p className="text-[10px] sm:text-xs text-accent-blue font-bold">{message}</p>
+                  </motion.div>
+                )}
+
+                <Button type="submit" className="btn-primary w-full py-2.5 mt-2" size="sm" loading={submitting}>
+                  {forgotPw ? 'Get Reset Link' : isSignUp ? 'Create Account' : 'Sign In'}
+                </Button>
+
+                {forgotPw && (
+                  <button type="button" onClick={() => setForgotPw(false)} className="w-full text-xs text-content-muted hover:text-content-primary font-bold mt-2">Back to Login</button>
+                )}
+              </form>
 
               {!forgotPw && (
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between px-1">
-                    <label className="text-[11px] font-bold text-content-muted uppercase tracking-wider">Access Token</label>
-                    {!isSignUp && (
-                      <button type="button" onClick={() => setForgotPw(true)} className="text-[10px] text-accent-blue hover:underline font-bold">Forgot?</button>
+                <div className="text-center mt-5">
+                  <button 
+                    onClick={() => { setIsSignUp(!isSignUp); setError(''); setMessage(''); }}
+                    className="text-[10px] sm:text-xs text-content-secondary hover:text-content-primary transition-colors flex items-center justify-center gap-1.5 mx-auto font-medium"
+                  >
+                    {isSignUp ? (
+                      <><LogIn size={12} /> Already authorized? Sign In</>
+                    ) : (
+                      <><UserPlus size={12} /> New system? Create Account</>
                     )}
-                  </div>
-                  <div className="relative">
-                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-content-muted"><Lock size={16} /></span>
-                    <input
-                      type={showPw ? 'text' : 'password'}
-                      value={password}
-                      onChange={e => setPassword(e.target.value)}
-                      className="input-field pl-12 pr-12"
-                      placeholder="••••••••"
-                      required={!forgotPw}
-                    />
-                    <button type="button" onClick={() => setShowPw(!showPw)} className="absolute right-4 top-1/2 -translate-y-1/2 text-content-muted hover:text-content-primary transition-colors">
-                      {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
-                    </button>
-                  </div>
+                  </button>
                 </div>
               )}
-
-              {error && (
-                <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="flex items-center gap-2 px-4 py-3 rounded-2xl bg-danger/10 border border-danger/20">
-                  <AlertCircle size={16} className="text-danger flex-shrink-0" />
-                  <p className="text-xs text-danger font-bold">{error}</p>
-                </motion.div>
-              )}
-
-              {message && (
-                <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="flex flex-col gap-2 px-4 py-3 rounded-2xl bg-accent-blue/10 border border-accent-blue/20">
-                  <p className="text-xs text-accent-blue font-bold">{message}</p>
-                  {message.includes('Verification') && (
-                    <button type="button" onClick={handleResendEmail} className="text-[10px] text-accent-blue underline font-bold text-left">
-                      Didn't get it? Resend now
-                    </button>
-                  )}
-                </motion.div>
-              )}
-
-              <Button type="submit" className="btn-primary w-full" size="lg" loading={submitting}>
-                {forgotPw ? 'Get Reset Link' : isSignUp ? 'Create My Account' : 'Sign In to Ledger'}
-              </Button>
-
-              {forgotPw && (
-                <button type="button" onClick={() => setForgotPw(false)} className="w-full text-xs text-content-muted hover:text-content-primary font-bold">Back to Login</button>
-              )}
-            </form>
-
-            {!forgotPw && (
-              <div className="text-center mt-6">
-                <button 
-                  onClick={() => { setIsSignUp(!isSignUp); setError(''); setMessage(''); }}
-                  className="text-xs text-content-secondary hover:text-content-primary transition-colors flex items-center justify-center gap-2 mx-auto font-medium"
-                >
-                  {isSignUp ? (
-                    <><LogIn size={14} /> Already authorized? Sign In</>
-                  ) : (
-                    <><UserPlus size={14} /> New system? Create Secure Account</>
-                  )}
-                </button>
-              </div>
-            )}
-          </div>
-
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 1 }}
-            className="text-center mt-8 space-y-4"
-          >
-            <p className="text-xs text-content-muted font-medium">
-              Enterprise Billing Platform · Standard Edition
-            </p>
+            </div>
           </motion.div>
-        </motion.div>
-      </div>
+        </div>
+      </main>
 
-      <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-accent-blue/20 to-transparent" />
+      {/* Fixed Footer */}
+      <footer className="py-4 sm:py-5 flex flex-col items-center gap-3 bg-bg-secondary border-t border-content-primary/5 z-50 flex-shrink-0">
+        <div className="flex items-center gap-6">
+          <button onClick={() => setShowFAQ(true)} className="text-[10px] font-bold text-content-muted uppercase tracking-[0.2em] hover:text-accent-red transition-colors">FAQ</button>
+          <button onClick={() => setShowContact(true)} className="text-[10px] font-bold text-content-muted uppercase tracking-[0.2em] hover:text-accent-red transition-colors">Contact</button>
+        </div>
+        <p className="text-[9px] font-bold text-content-muted uppercase tracking-[0.2em]">© 2026 Paras Trading Co.</p>
+      </footer>
+
+      {/* Popups */}
+
+      <AnimatePresence>
+        {showFAQ && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowFAQ(false)} className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="relative bg-bg-elevated w-full max-w-md rounded-[2.5rem] p-8 shadow-2xl overflow-hidden">
+               <h3 className="text-xl font-bold text-content-primary mb-6">Frequently Asked Questions</h3>
+               <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-2 scrollbar-hide">
+                 {[
+                   { q: "What is Digital Laal Vahi?", a: "It's a modern business billing and accounting software designed for fast invoice creation and ledger management." },
+                   { q: "Is my data secure?", a: "Yes, we use enterprise-grade encryption and row-level security to protect your business records." },
+                   { q: "Can I use it on mobile?", a: "Absolutely! The app is fully responsive and optimized for Android and iOS devices." },
+                 ].map((f, i) => (
+                   <div key={i} className="p-4 rounded-2xl bg-bg-secondary/50 border border-content-primary/5">
+                     <p className="text-sm font-bold text-content-primary mb-1">Q. {f.q}</p>
+                     <p className="text-xs text-content-secondary">{f.a}</p>
+                   </div>
+                 ))}
+               </div>
+               <Button className="btn-primary w-full mt-6" onClick={() => setShowFAQ(false)}>Close</Button>
+            </motion.div>
+          </div>
+        )}
+
+        {showContact && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowContact(false)} className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="relative bg-bg-elevated w-full max-w-md rounded-[2.5rem] p-8 shadow-2xl overflow-hidden">
+               <h3 className="text-xl font-bold text-content-primary mb-2">Contact Support</h3>
+               <p className="text-xs text-content-secondary mb-6">Our technical team is ready to assist you.</p>
+               <div className="space-y-4">
+                 <div className="flex items-center gap-4 p-4 rounded-2xl bg-bg-secondary/50 border border-content-primary/5">
+                   <Mail className="text-accent-red" size={20} />
+                   <div>
+                     <p className="text-[10px] font-bold text-content-muted uppercase tracking-widest">Email Address</p>
+                     <p className="text-sm font-bold text-content-primary">support@parastrading.com</p>
+                   </div>
+                 </div>
+                 <div className="flex items-center gap-4 p-4 rounded-2xl bg-bg-secondary/50 border border-content-primary/5">
+                   <Sparkles className="text-accent-gold" size={20} />
+                   <div>
+                     <p className="text-[10px] font-bold text-content-muted uppercase tracking-widest">Support Hours</p>
+                     <p className="text-sm font-bold text-content-primary">Mon - Sat · 10 AM - 7 PM</p>
+                   </div>
+                 </div>
+               </div>
+               <Button className="btn-primary w-full mt-8" onClick={() => setShowContact(false)}>Got it</Button>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

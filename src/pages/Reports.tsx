@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { BarChart3, TrendingUp, Calendar, IndianRupee } from 'lucide-react';
+import { BarChart3, TrendingUp, Calendar, IndianRupee, Download } from 'lucide-react';
+import * as XLSX from 'xlsx';
 import { PageHeader } from '../components/layout/PageHeader';
 import { TableSkeleton } from '../components/ui/Skeleton';
 import { getInvoices } from '../lib/storage';
@@ -13,6 +14,24 @@ export function Reports() {
   const [filter, setFilter] = useState<'all' | 'reportable'>('all');
 
   useEffect(() => { getInvoices().then(d => { setInvoices(d); setLoading(false); }); }, []);
+
+  const exportToExcel = () => {
+    const data = shown.map(inv => ({
+      'Invoice No': inv.invoiceNo,
+      'Date': inv.dateOfSupply,
+      'Customer Name': inv.receiverName,
+      'GSTIN': inv.receiverGstin,
+      'Place of Supply': inv.placeOfSupply,
+      'Total Amount': inv.totalAmount,
+      'Taxable Value': (inv.totalAmount || 0) / 1.18, // Simplified estimation
+      'GST Rate': inv.items?.[0]?.gstRate || 0,
+      'Reportable': inv.reportable ? 'Yes' : 'No'
+    }));
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Sales Report");
+    XLSX.writeFile(wb, `Sales_Report_${new Date().toISOString().slice(0,10)}.xlsx`);
+  };
 
   const shown = filter === 'reportable' ? invoices.filter(i => i.reportable) : invoices;
   const total = shown.reduce((s, i) => s + (i.totalAmount || 0), 0);
@@ -27,7 +46,9 @@ export function Reports() {
 
   return (
     <div className="page-container">
-      <PageHeader title="Reports" subtitle="Revenue analytics" back icon={<BarChart3 size={18} />} />
+      <PageHeader title="Reports" subtitle="Revenue analytics" back icon={<BarChart3 size={18} />} 
+        action={<button onClick={exportToExcel} className="btn-primary text-xs px-3 py-2"><Download size={14} /> Export</button>}
+      />
 
       <div className="flex gap-2 mb-4">
         {(['all', 'reportable'] as const).map(f => (

@@ -7,7 +7,7 @@ export default defineConfig({
         react(),
         VitePWA({
             registerType: 'autoUpdate',
-            includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
+            includeAssets: ['favicon.ico', 'laal_vahi_new_logo.png', 'apple-touch-icon.png'],
             manifest: {
                 name: 'Paras Trading — Billing Platform',
                 short_name: 'ParasTrading',
@@ -25,6 +25,7 @@ export default defineConfig({
                 ],
             },
             workbox: {
+                maximumFileSizeToCacheInBytes: 4000000,
                 globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
                 runtimeCaching: [
                     {

@@ -5,7 +5,7 @@ import { Printer, Download, Pencil, Share2, CheckCircle } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { getSettings, calculateInvoiceTotal } from '../../lib/storage';
 import { numberToWords } from '../../lib/numberToWords';
-import { formatCurrency } from '../../lib/utils';
+import { formatCurrency, shareToWhatsApp } from '../../lib/utils';
 import type { InvoiceData, UserSettings } from '../../types';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
@@ -21,12 +21,13 @@ export function InvoicePreviewPage({ data, onEdit }: Props) {
   useEffect(() => { getSettings().then(setSettings); }, []);
 
   const total = data.totalAmount || calculateInvoiceTotal(data);
+  const isService = data.invoiceType === 'service';
 
   const items = data.items || [];
   let subtotal = 0, gstTotal = 0;
   const itemRows = items.map((item: any) => {
     const incRate = Number(item.inclusiveRate) || 0;
-    const qty = Number(item.qty) || 1;
+    const qty = isService ? 1 : (Number(item.qty) || 1);
     const gstRate = Number(item.gstRate) || 0;
     const isInclusive = item.isInclusive !== false;
     const taxableRate = isInclusive ? incRate / (1 + gstRate / 100) : incRate;
@@ -60,6 +61,11 @@ export function InvoicePreviewPage({ data, onEdit }: Props) {
     } finally { setDownloading(false); }
   };
 
+  const handleWhatsApp = () => {
+    const text = `Greetings from ${settings?.companyName || 'Paras Trading'}.\n\n*TAX INVOICE*\nInvoice No: ${data.invoiceNo}\nDate: ${data.dateOfSupply}\nAmount: ${formatCurrency(total)}\n\nPlease find the details below.\nThank you!`;
+    shareToWhatsApp(data.receiverPhone || '', text);
+  };
+
   const Row = ({ label, value, bold }: { label: string; value: string; bold?: boolean }) => (
     <tr className={bold ? 'font-bold' : ''}>
       <td className="py-1 text-xs text-slate-600 pr-4">{label}</td>
@@ -70,129 +76,189 @@ export function InvoicePreviewPage({ data, onEdit }: Props) {
   return (
     <div className="page-container">
       {/* Action Buttons */}
-      <div className="flex gap-2 mb-4 no-print">
-        <button onClick={() => navigate(-1)} className="btn-secondary flex-1 text-xs py-2">← Back</button>
-        {onEdit && <button onClick={onEdit} className="btn-secondary flex-1 text-xs py-2"><Pencil size={12} /> Edit</button>}
-        <button onClick={handlePrint} className="btn-secondary flex-1 text-xs py-2"><Printer size={12} /> Print</button>
-        <Button onClick={handleDownload} loading={downloading} size="sm" className="flex-1 text-xs py-2" icon={<Download size={12} />}>PDF</Button>
+      <div className="flex gap-2 mb-4 no-print overflow-x-auto pb-1 scrollbar-hide">
+        <button onClick={() => navigate(-1)} className="btn-secondary min-w-[80px] text-xs py-2">← Back</button>
+        {onEdit && <button onClick={onEdit} className="btn-secondary min-w-[80px] text-xs py-2"><Pencil size={12} /> Edit</button>}
+        <button onClick={handlePrint} className="btn-secondary min-w-[80px] text-xs py-2"><Printer size={12} /> Print</button>
+        <button onClick={handleWhatsApp} className="btn-secondary min-w-[100px] text-xs py-2 text-neon-green border-neon-green/20"><Share2 size={12} /> WhatsApp</button>
+        <Button onClick={handleDownload} loading={downloading} size="sm" className="min-w-[80px] text-xs py-2" icon={<Download size={12} />}>PDF</Button>
       </div>
 
       {/* Invoice Document */}
       <div ref={printRef} className="bg-white text-gray-900 rounded-2xl overflow-hidden print:rounded-none" style={{ fontFamily: 'Arial, sans-serif', fontSize: '12px' }}>
         {/* Header */}
-        <div className="bg-gradient-to-r from-slate-800 to-slate-900 text-white px-6 py-4">
+        <div className="px-8 py-8 border-b border-gray-100">
           <div className="flex justify-between items-start">
-            <div>
-              <h1 className="text-lg font-bold">{settings?.companyName || 'Paras Trading'}</h1>
-              <p className="text-xs text-slate-300 mt-0.5">{settings?.proprietorName}</p>
-              <p className="text-xs text-slate-400 mt-0.5 max-w-xs">{settings?.address}</p>
-              <p className="text-xs text-slate-400">GSTIN: {settings?.gstin}</p>
+            <div className="flex-1">
+              <h1 className="text-3xl font-black text-[#B91C1C] tracking-tight uppercase leading-none mb-2">
+                {settings?.companyName || 'PARAS TRADING CO.'}
+              </h1>
+              <p className="text-sm font-bold text-gray-700 mb-4">
+                Proprietor: {settings?.proprietorName || 'Parasmal Jethmal Jain'}
+              </p>
+              <div className="text-[11px] text-gray-500 leading-relaxed max-w-sm">
+                <p>{settings?.address}</p>
+                <p className="mt-1 font-bold text-gray-700">GSTIN: {settings?.gstin}</p>
+              </div>
             </div>
-            <div className="text-right">
-              <p className="text-lg font-bold text-blue-300">TAX INVOICE</p>
-              <p className="text-xs text-slate-300 mt-1">No: {data.invoiceNo}</p>
-              <p className="text-xs text-slate-400">Date: {data.dateOfSupply}</p>
+            <div className="text-right flex flex-col items-end">
+              <div className="bg-[#EEF2FF] text-[#4338CA] px-4 py-2 rounded-lg font-bold text-sm tracking-widest uppercase mb-6">
+                Tax Invoice
+              </div>
+              <div className="space-y-1">
+                <p className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">Invoice No</p>
+                <p className="text-sm font-black text-gray-800">{data.invoiceNo}</p>
+              </div>
+              <div className="mt-4 space-y-1">
+                <p className="text-[11px] text-gray-400 font-bold uppercase tracking-wider">Date</p>
+                <p className="text-sm font-black text-gray-800">{data.dateOfSupply}</p>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Receiver & Transport */}
-        <div className="px-6 py-4 border-b border-gray-200">
-          <div className="grid grid-cols-2 gap-6">
-            <div>
-              <p className="text-xs font-bold text-gray-500 uppercase mb-1">Bill To</p>
-              <p className="font-bold text-sm">{data.receiverName}</p>
-              <p className="text-xs text-gray-600 mt-0.5">{data.receiverAddress}</p>
-              <p className="text-xs text-gray-600">{data.receiverState} — {data.receiverStateCode}</p>
-              <p className="text-xs text-gray-600">GSTIN: {data.receiverGstin}</p>
-              {data.receiverPhone && <p className="text-xs text-gray-600">Ph: {data.receiverPhone}</p>}
+        {/* Receiver & Transport Boxes */}
+        <div className="px-8 py-6 grid grid-cols-2 gap-6">
+          <div className="bg-[#F8FAFC] rounded-2xl p-6 border border-gray-100">
+            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em] mb-4">Billed To</p>
+            <div className="space-y-1">
+              <p className="text-lg font-black text-gray-800 leading-tight">{data.receiverName}</p>
+              <p className="text-[11px] text-gray-500 leading-relaxed mt-2">{data.receiverAddress}</p>
+              <p className="text-[11px] font-bold text-gray-700 mt-2">GSTIN: {data.receiverGstin}</p>
             </div>
-            <div>
-              <p className="text-xs font-bold text-gray-500 uppercase mb-1">Dispatch Details</p>
-              {data.vehicleNo && <p className="text-xs text-gray-600">Vehicle: {data.vehicleNo}</p>}
-              {data.nameOfTransport && <p className="text-xs text-gray-600">Transport: {data.nameOfTransport}</p>}
-              {data.modeOfTransport && <p className="text-xs text-gray-600">Mode: {data.modeOfTransport}</p>}
-              {data.placeOfSupply && <p className="text-xs text-gray-600">Place: {data.placeOfSupply}</p>}
-              {data.poNo && <p className="text-xs text-gray-600">PO No: {data.poNo}</p>}
+          </div>
+          <div className="bg-[#F8FAFC] rounded-2xl p-6 border border-gray-100">
+            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em] mb-4">Transport & Delivery</p>
+            <div className="grid grid-cols-2 gap-y-4 gap-x-2">
+              <div>
+                <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">P.O. Number</p>
+                <p className="text-[11px] font-bold text-gray-800">{data.poNo || '-'}</p>
+              </div>
+              <div>
+                <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">P.O. Date</p>
+                <p className="text-[11px] font-bold text-gray-800">{data.poDate || '-'}</p>
+              </div>
+              <div>
+                <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">Vehicle No.</p>
+                <p className="text-[11px] font-bold text-gray-800 uppercase">{data.vehicleNo || '-'}</p>
+              </div>
+              <div>
+                <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">Transport</p>
+                <p className="text-[11px] font-bold text-gray-800">{data.nameOfTransport || '-'}</p>
+              </div>
+              <div>
+                <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">Place of Supply</p>
+                <p className="text-[11px] font-bold text-gray-800">{data.placeOfSupply || '-'}</p>
+              </div>
+              <div>
+                <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">Mode</p>
+                <p className="text-[11px] font-bold text-gray-800">{data.modeOfTransport || '-'}</p>
+              </div>
             </div>
           </div>
         </div>
 
         {/* Items Table */}
-        <div className="px-6 py-3">
-          <table className="w-full text-xs border-collapse">
+        <div className="px-8 py-2">
+          <table className="w-full text-xs">
             <thead>
-              <tr className="bg-gray-100">
-                <th className="py-2 px-2 text-left font-semibold text-gray-600">Description</th>
-                <th className="py-2 px-2 text-center font-semibold text-gray-600">HSN</th>
-                <th className="py-2 px-2 text-center font-semibold text-gray-600">Qty</th>
-                <th className="py-2 px-2 text-right font-semibold text-gray-600">Rate</th>
-                <th className="py-2 px-2 text-right font-semibold text-gray-600">Taxable</th>
-                <th className="py-2 px-2 text-right font-semibold text-gray-600">GST</th>
-                <th className="py-2 px-2 text-right font-semibold text-gray-600">Amount</th>
+              <tr className="bg-[#F1F5F9] border-y border-gray-200">
+                <th className="py-3 px-3 text-left font-bold text-gray-500 w-12">#</th>
+                <th className="py-3 px-3 text-left font-bold text-gray-500">Description of Goods</th>
+                {!isService && <th className="py-3 px-3 text-center font-bold text-gray-500">HSN</th>}
+                {!isService && <th className="py-3 px-3 text-center font-bold text-gray-500">Qty</th>}
+                {!isService && <th className="py-3 px-3 text-center font-bold text-gray-500">Unit</th>}
+                <th className="py-3 px-3 text-right font-bold text-gray-500">{isService ? 'Amount' : 'Rate (₹)'}</th>
+                <th className="py-3 px-3 text-right font-bold text-gray-500">Total (₹)</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-gray-100">
               {itemRows.map((item: any, i: number) => (
-                <tr key={i} className={i % 2 === 0 ? '' : 'bg-gray-50'}>
-                  <td className="py-1.5 px-2">{item.description}</td>
-                  <td className="py-1.5 px-2 text-center">{item.hsnCode}</td>
-                  <td className="py-1.5 px-2 text-center">{item.qty} {item.unit}</td>
-                  <td className="py-1.5 px-2 text-right">₹{Number(item.inclusiveRate).toFixed(2)}</td>
-                  <td className="py-1.5 px-2 text-right">₹{item.taxable.toFixed(2)}</td>
-                  <td className="py-1.5 px-2 text-right">₹{item.gst.toFixed(2)}</td>
-                  <td className="py-1.5 px-2 text-right font-semibold">₹{(item.taxable + item.gst).toFixed(2)}</td>
+                <tr key={i} className="group">
+                  <td className="py-4 px-3 text-gray-500 font-medium">{i + 1}</td>
+                  <td className="py-4 px-3">
+                    <p className="font-black text-gray-800 text-sm mb-0.5">{item.description}</p>
+                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">GST: {item.gstRate}%</p>
+                  </td>
+                  {!isService && <td className="py-4 px-3 text-center font-bold text-gray-600">{item.hsnCode}</td>}
+                  {!isService && <td className="py-4 px-3 text-center font-black text-gray-800">{item.qty}</td>}
+                  {!isService && <td className="py-4 px-3 text-center font-bold text-gray-500">{item.unit}</td>}
+                  <td className="py-4 px-3 text-right font-bold text-gray-700">{Number(item.inclusiveRate).toFixed(2)}</td>
+                  <td className="py-4 px-3 text-right font-black text-gray-800 text-sm">{(item.taxable + item.gst).toFixed(2)}</td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
 
-        {/* Totals */}
-        <div className="px-6 pb-4">
-          <div className="flex justify-end">
-            <table className="text-xs w-48">
-              <tbody>
-                <Row label="Subtotal" value={`₹${subtotal.toFixed(2)}`} />
-                {isSameState ? (
-                  <>
-                    <Row label="CGST" value={`₹${(gstTotal / 2).toFixed(2)}`} />
-                    <Row label="SGST" value={`₹${(gstTotal / 2).toFixed(2)}`} />
-                  </>
-                ) : <Row label="IGST" value={`₹${gstTotal.toFixed(2)}`} />}
-                {loading > 0 && <Row label="Loading" value={`₹${loading.toFixed(2)}`} />}
-                {transport > 0 && <Row label="Transport" value={`₹${transport.toFixed(2)}`} />}
-                {other > 0 && <Row label="Other" value={`₹${other.toFixed(2)}`} />}
-                {hamali > 0 && <Row label="Hamali" value={`₹${hamali.toFixed(2)}`} />}
-                <tr><td colSpan={2}><div className="my-1 border-t border-gray-300" /></td></tr>
-                <tr className="bg-slate-800 text-white rounded">
-                  <td className="py-1.5 px-2 font-bold text-sm rounded-l">TOTAL</td>
-                  <td className="py-1.5 px-2 font-bold text-sm text-right rounded-r">₹{total.toFixed(0)}</td>
-                </tr>
-              </tbody>
-            </table>
+        {/* Bank & Totals Section */}
+        <div className="px-8 py-8 flex justify-between items-start gap-12">
+          <div className="flex-1 space-y-8">
+            <div>
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em] mb-3">Bank Details</p>
+              <div className="space-y-1">
+                <p className="text-[11px] text-gray-700"><span className="font-bold text-gray-400 uppercase w-20 inline-block">Account Name</span> {settings?.bankAccountName || settings?.companyName}</p>
+                <p className="text-[11px] text-gray-700"><span className="font-bold text-gray-400 uppercase w-20 inline-block">Bank</span> {settings?.bankName}</p>
+                <p className="text-[11px] text-gray-700"><span className="font-bold text-gray-400 uppercase w-20 inline-block">Account No</span> {settings?.bankAccountNo}</p>
+                <p className="text-[11px] text-gray-700"><span className="font-bold text-gray-400 uppercase w-20 inline-block">IFSC Code</span> {settings?.bankIfsc}</p>
+              </div>
+            </div>
+            <div>
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em] mb-3">Terms & Conditions</p>
+              <p className="text-[10px] text-gray-400 leading-relaxed italic max-w-xs">
+                {settings?.termsConditions || 'Certified that the particulars given above are true & correct. Interest will be recovered @ 24% p.a. on overdue unpaid bills.'}
+              </p>
+            </div>
           </div>
-          <p className="text-xs text-gray-500 mt-2 italic">Amount in words: {numberToWords(total)}</p>
+
+          <div className="w-72">
+            <div className="bg-[#F8FAFC] rounded-2xl p-6 border border-gray-100 space-y-3">
+              <div className="flex justify-between items-center">
+                <p className="text-xs font-bold text-gray-500">Subtotal</p>
+                <p className="text-xs font-black text-gray-800">₹ {subtotal.toFixed(2)}</p>
+              </div>
+              {isSameState ? (
+                <>
+                  <div className="flex justify-between items-center">
+                    <p className="text-xs font-bold text-gray-500">CGST</p>
+                    <p className="text-xs font-black text-gray-800">₹ {(gstTotal / 2).toFixed(2)}</p>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <p className="text-xs font-bold text-gray-500">SGST</p>
+                    <p className="text-xs font-black text-gray-800">₹ {(gstTotal / 2).toFixed(2)}</p>
+                  </div>
+                </>
+              ) : (
+                <div className="flex justify-between items-center">
+                  <p className="text-xs font-bold text-gray-500">IGST</p>
+                  <p className="text-xs font-black text-gray-800">₹ {gstTotal.toFixed(2)}</p>
+                </div>
+              )}
+              {hamali > 0 && (
+                <div className="flex justify-between items-center">
+                  <p className="text-xs font-bold text-gray-500">Hamali</p>
+                  <p className="text-xs font-black text-gray-800">₹ {hamali.toFixed(2)}</p>
+                </div>
+              )}
+              <div className="h-px bg-gray-200 my-2" />
+              <div className="flex justify-between items-center">
+                <p className="text-lg font-black text-gray-800">Total</p>
+                <p className="text-2xl font-black text-[#B91C1C]">₹ {total.toFixed(0)}</p>
+              </div>
+            </div>
+            <p className="text-[10px] text-right text-gray-400 mt-4 italic font-medium leading-relaxed">
+              Amount in words: {numberToWords(total)} Only
+            </p>
+          </div>
         </div>
 
-        {/* Bank & Terms */}
-        <div className="px-6 pb-4 border-t border-gray-200 grid grid-cols-2 gap-6 pt-3">
-          <div>
-            <p className="text-xs font-bold text-gray-500 uppercase mb-1">Bank Details</p>
-            <p className="text-xs text-gray-600">{settings?.bankName}</p>
-            {settings?.bankAccountName && <p className="text-xs text-gray-600">A/c Name: {settings.bankAccountName}</p>}
-            <p className="text-xs text-gray-600">A/c No: {settings?.bankAccountNo}</p>
-            <p className="text-xs text-gray-600">IFSC: {settings?.bankIfsc}</p>
+        <div className="px-8 py-10 flex justify-between items-end">
+          <p className="text-[10px] text-gray-300 font-medium">This is a computer-generated invoice</p>
+          <div className="text-right">
+            <p className="text-sm font-black text-gray-800 uppercase tracking-tighter">FOR {settings?.companyName || 'PARAS TRADING CO.'}</p>
+            <div className="h-16" />
+            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Authorised Signatory</p>
           </div>
-          <div>
-            <p className="text-xs font-bold text-gray-500 uppercase mb-1">Terms & Conditions</p>
-            <p className="text-xs text-gray-500">{settings?.termsConditions || 'Payment due within 30 days.'}</p>
-          </div>
-        </div>
-
-        <div className="px-6 py-3 bg-gray-50 border-t border-gray-200 flex justify-between items-center">
-          <p className="text-xs text-gray-400">This is a computer-generated invoice</p>
-          <p className="text-xs font-bold text-gray-600">Authorised Signatory</p>
         </div>
       </div>
     </div>

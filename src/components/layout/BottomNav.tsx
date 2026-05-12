@@ -8,7 +8,7 @@ const navItems = [
   { path: '/', icon: LayoutDashboard, label: 'Home' },
   { path: '/invoices', icon: FileText, label: 'Invoices' },
   { path: '/outstandings', icon: IndianRupee, label: 'Due' },
-  { path: '/more', icon: Menu, label: 'More' },
+  // Note: 'More' is rendered separately below as a button (not a Link)
 ];
 
 export function BottomNav({ onOpenMenu }: { onOpenMenu: () => void }) {

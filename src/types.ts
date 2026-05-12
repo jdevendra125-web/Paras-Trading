@@ -8,6 +8,7 @@ export interface Customer {
   region: string;
   phone?: string;
   email?: string;
+  openingBalance?: number; // Initial balance (Positive for Debit/Owes Us)
 }
 
 export interface MasterItem {
@@ -49,10 +50,26 @@ export interface Transaction {
   customerId?: string;
   particulars: string;
   refNo?: string;
+  // Reconciliation metadata
+  status?: 'pending' | 'reconciled' | 'flagged' | 'ignored';
+  confidence?: number;
+  suggestedCustomerId?: string;
+  importSessionId?: string;
+  rawNarration?: string;
+}
+
+export interface BankImportSession {
+  id: string;
+  date: string;
+  fileName: string;
+  bankAccountId?: string;
+  totalTransactions: number;
+  reconciledCount: number;
 }
 
 export interface InvoiceData {
   invoiceNo: string;
+  invoiceType?: 'goods' | 'service';
   dateOfSupply: string;
   poNo: string;
   poDate: string;

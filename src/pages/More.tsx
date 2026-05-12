@@ -7,6 +7,8 @@ import {
 } from 'lucide-react';
 import { PageHeader } from '../components/layout/PageHeader';
 import { useAuth } from '../hooks/useAuth';
+import { getSettings } from '../lib/storage';
+import type { UserSettings } from '../types';
 
 const menuGroups = [
   {
@@ -34,6 +36,14 @@ const menuGroups = [
 
 export function More() {
   const { user, signOut } = useAuth();
+  const [settings, setSettings] = React.useState<UserSettings | null>(null);
+
+  React.useEffect(() => {
+    getSettings().then(setSettings);
+  }, []);
+
+  const businessName = settings?.companyName || 'Digital Laal Vahi';
+  const ownerName = settings?.proprietorName || 'Administrator';
 
   return (
     <div className="page-container">
@@ -41,12 +51,12 @@ export function More() {
 
       {/* User Card */}
       <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="glass-card p-4 flex items-center gap-3 mb-6">
-        <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-accent-blue to-accent-indigo flex items-center justify-center flex-shrink-0">
-          <User size={20} className="text-white" />
+        <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-accent-blue to-accent-indigo flex items-center justify-center flex-shrink-0 text-white font-bold">
+          {(settings?.companyName?.[0] || 'T').toUpperCase()}
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-bold text-white truncate">{user?.email}</p>
-          <p className="text-xs text-slate-500">Administrator</p>
+          <p className="text-sm font-bold text-white truncate">{businessName}</p>
+          <p className="text-xs text-slate-500 truncate">{ownerName}</p>
         </div>
       </motion.div>
 

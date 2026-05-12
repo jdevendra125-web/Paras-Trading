@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">Digital Ledger</string>
-    <string name="title_activity_main">Digital Ledger</string>
-    <string name="package_name">com.digitalledger.app</string>
-    <string name="custom_url_scheme">com.digitalledger.app</string>
+    <string name="app_name">Laal Vahi</string>
+    <string name="title_activity_main">Laal Vahi</string>
+    <string name="package_name">com.parastrading.app</string>
+    <string name="custom_url_scheme">com.parastrading.app</string>
 </resources>

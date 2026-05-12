@@ -5,8 +5,10 @@ import { FileText, IndianRupee, TrendingUp } from 'lucide-react';
 import { PageHeader } from '../components/layout/PageHeader';
 import { TableSkeleton } from '../components/ui/Skeleton';
 import { getInvoices, getCustomers, getTransactions } from '../lib/storage';
-import { formatCurrency, formatDateShort } from '../lib/utils';
-import type { InvoiceData, Customer, Transaction } from '../types';
+import { formatCurrency, formatDateShort, shareToWhatsApp } from '../lib/utils';
+import { getSettings } from '../lib/storage';
+import { Printer, Share2 } from 'lucide-react';
+import type { InvoiceData, Customer, Transaction, UserSettings } from '../types';
 
 export function CustomerStatement() {
   const { customerId } = useParams<{ customerId: string }>();
@@ -14,15 +16,23 @@ export function CustomerStatement() {
   const [customer, setCustomer] = useState<Customer | null>(null);
   const [invoices, setInvoices] = useState<InvoiceData[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [settings, setSettings] = useState<UserSettings | null>(null);
 
   useEffect(() => {
-    Promise.all([getCustomers(), getInvoices(), getTransactions()]).then(([custs, invs, txns]) => {
+    Promise.all([getCustomers(), getInvoices(), getTransactions(), getSettings()]).then(([custs, invs, txns, sets]) => {
       setCustomer(custs.find(c => c.id === customerId) || null);
       setInvoices(invs.filter(i => i.customerId === customerId));
       setTransactions(txns.filter(t => t.customerId === customerId));
+      setSettings(sets);
       setLoading(false);
     });
   }, [customerId]);
+
+  const handleWhatsApp = () => {
+    if (!customer) return;
+    const text = `Greetings from ${settings?.companyName || 'Paras Trading'}.\n\nStatement for: ${customer.name}\nOutstanding Balance: ${formatCurrency(balance)}\n\nPlease find the details below.\nThank you!`;
+    shareToWhatsApp(customer.phone || '', text);
+  };
 
   const totalBilled = useMemo(() => invoices.reduce((s, i) => s + (i.totalAmount || 0), 0), [invoices]);
   const totalPaid = useMemo(() => transactions.filter(t => t.type === 'CR').reduce((s, t) => s + t.amount, 0), [transactions]);
@@ -39,7 +49,23 @@ export function CustomerStatement() {
 
   return (
     <div className="page-container">
-      <PageHeader title={customer?.name || 'Statement'} subtitle="Account statement" back />
+      <PageHeader title={customer?.name || 'Statement'} subtitle="Account statement" back
+        action={
+          <div className="flex gap-2">
+            <button onClick={() => window.print()} className="w-10 h-10 rounded-xl bg-bg-secondary border border-content-primary/5 flex items-center justify-center text-content-primary hover:bg-bg-elevated"><Printer size={18} /></button>
+            <button onClick={handleWhatsApp} className="btn-primary text-xs px-3 py-2"><Share2 size={16} /> Share</button>
+          </div>
+        }
+      />
+
+      <div className="print:block hidden mb-8 text-black">
+        <h1 className="text-2xl font-bold uppercase">{settings?.companyName}</h1>
+        <p className="text-xs">{settings?.address}</p>
+        <p className="text-xs font-bold mt-1">GSTIN: {settings?.gstin}</p>
+        <div className="h-px bg-gray-200 my-4" />
+        <p className="text-sm font-bold">Party Statement: {customer?.name}</p>
+        <p className="text-xs">Period: All Transactions</p>
+      </div>
 
       {!loading && (
         <div className="grid grid-cols-3 gap-2 mb-4">

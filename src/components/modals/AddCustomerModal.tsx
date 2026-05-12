@@ -39,15 +39,15 @@ interface Props {
 }
 
 export function AddCustomerModal({ open, onClose, onSaved, editing }: Props) {
-  const [form, setForm] = useState({ name: '', address: '', state: '', stateCode: '', gstin: '', region: '', phone: '', email: '' });
+  const [form, setForm] = useState({ name: '', address: '', state: '', stateCode: '', gstin: '', region: '', phone: '', email: '', openingBalance: '' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   React.useEffect(() => {
     if (editing) {
-      setForm({ name: editing.name, address: editing.address, state: editing.state, stateCode: editing.stateCode, gstin: editing.gstin, region: editing.region || '', phone: editing.phone || '', email: editing.email || '' });
+      setForm({ name: editing.name, address: editing.address, state: editing.state, stateCode: editing.stateCode, gstin: editing.gstin, region: editing.region || '', phone: editing.phone || '', email: editing.email || '', openingBalance: String(editing.openingBalance || 0) });
     } else {
-      setForm({ name: '', address: '', state: '', stateCode: '', gstin: '', region: '', phone: '', email: '' });
+      setForm({ name: '', address: '', state: '', stateCode: '', gstin: '', region: '', phone: '', email: '', openingBalance: '' });
     }
     setError('');
   }, [open, editing]);
@@ -65,8 +65,9 @@ export function AddCustomerModal({ open, onClose, onSaved, editing }: Props) {
     if (!form.name.trim() || !form.state || !form.gstin.trim()) { setError('Name, State and GSTIN are required'); return; }
     setLoading(true); setError('');
     try {
-      if (editing) { await updateCustomer(editing.id, form); }
-      else { await addCustomer(form); }
+      const payload = { ...form, openingBalance: Number(form.openingBalance) || 0 };
+      if (editing) { await updateCustomer(editing.id, payload); }
+      else { await addCustomer(payload); }
       onSaved(); onClose();
     } catch (e: any) { setError(e.message || 'Failed to save'); }
     finally { setLoading(false); }
@@ -98,7 +99,10 @@ export function AddCustomerModal({ open, onClose, onSaved, editing }: Props) {
           <Input label="Region" value={form.region} onChange={set('region')} placeholder="North / South" />
           <Input label="Phone" value={form.phone} onChange={set('phone')} type="tel" placeholder="9876543210" />
         </div>
-        <Input label="Email" value={form.email} onChange={set('email')} type="email" placeholder="customer@email.com" />
+        <div className="grid grid-cols-2 gap-3">
+          <Input label="Email" value={form.email} onChange={set('email')} type="email" placeholder="customer@email.com" />
+          <Input label="Opening Balance (₹)" value={form.openingBalance} onChange={set('openingBalance')} type="number" placeholder="0.00" />
+        </div>
         {error && (
           <AnimatePresence>
             <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} className="text-xs text-neon-red bg-neon-red/10 border border-neon-red/20 rounded-lg px-3 py-2">

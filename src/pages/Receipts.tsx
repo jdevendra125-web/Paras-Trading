@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, ArrowUpDown, Banknote, Search, Pencil, Trash2 } from 'lucide-react';
+import { Plus, ArrowUpDown, Banknote, Search, Pencil, Trash2, Download } from 'lucide-react';
 import { PageHeader } from '../components/layout/PageHeader';
 import { TableSkeleton } from '../components/ui/Skeleton';
 import { Modal, ConfirmDialog } from '../components/ui/Modal';
@@ -13,7 +13,7 @@ import type { Transaction, BankAccount, Customer } from '../types';
 const TYPE_OPTS = [{ value: 'CR', label: 'Credit (Received)' }, { value: 'DR', label: 'Debit (Paid)' }];
 const MODE_OPTS = [{ value: 'Bank', label: 'Bank' }, { value: 'Cash', label: 'Cash' }];
 
-const emptyForm = () => ({ date: todayISO(), amount: '', type: 'CR', mode: 'Bank', bankAccountId: '', customerId: '', particulars: '', refNo: '' });
+const emptyForm = () => ({ date: todayISO(), amount: '', type: 'CR', mode: 'Cash', bankAccountId: '', customerId: '', particulars: '', refNo: '' });
 
 export function Receipts() {
   const [txns, setTxns] = useState<Transaction[]>([]);
@@ -61,6 +61,71 @@ export function Receipts() {
   const totalCR = txns.filter(t => t.type === 'CR').reduce((s, t) => s + t.amount, 0);
   const totalDR = txns.filter(t => t.type === 'DR').reduce((s, t) => s + t.amount, 0);
 
+  const downloadReceipt = (txn: Transaction, customerName: string) => {
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+
+    const html = `
+      <html>
+        <head>
+          <title>Payment Receipt - ${txn.id}</title>
+          <style>
+            body { font-family: sans-serif; padding: 40px; color: #333; }
+            .receipt-box { border: 2px solid #eee; padding: 30px; max-width: 600px; margin: auto; }
+            .header { text-align: center; border-bottom: 2px solid #f5f5f5; padding-bottom: 20px; margin-bottom: 30px; }
+            .header h1 { margin: 0; color: #e11d48; font-size: 24px; }
+            .row { display: flex; justify-content: space-between; margin-bottom: 15px; border-bottom: 1px solid #fafafa; padding-bottom: 5px; }
+            .label { font-weight: bold; color: #666; font-size: 14px; }
+            .value { font-weight: bold; color: #000; font-size: 14px; }
+            .amount-box { background: #fdf2f2; padding: 20px; text-align: center; margin-top: 30px; border-radius: 10px; border: 1px solid #fee2e2; }
+            .amount-box h2 { margin: 0; color: #b91c1c; }
+            .footer { margin-top: 50px; text-align: center; font-size: 12px; color: #999; }
+          </style>
+        </head>
+        <body onload="window.print()">
+          <div class="receipt-box">
+            <div class="header">
+              <h1>Digital Laal Vahi</h1>
+              <p>Official Payment Receipt</p>
+            </div>
+            <div class="row">
+              <span class="label">Receipt Date:</span>
+              <span class="value">${txn.date}</span>
+            </div>
+            <div class="row">
+              <span class="label">Customer Name:</span>
+              <span class="value">${customerName || 'Cash Customer'}</span>
+            </div>
+            <div class="row">
+              <span class="label">Payment Mode:</span>
+              <span class="value">${txn.mode}</span>
+            </div>
+            <div class="row">
+              <span class="label">Reference No:</span>
+              <span class="value">${txn.refNo || 'N/A'}</span>
+            </div>
+            <div class="row">
+              <span class="label">Particulars:</span>
+              <span class="value">${txn.particulars}</span>
+            </div>
+            
+            <div class="amount-box">
+              <p class="label">TOTAL AMOUNT RECEIVED</p>
+              <h2>₹ ${txn.amount.toLocaleString('en-IN')}</h2>
+            </div>
+
+            <div class="footer">
+              <p>This is a computer generated receipt and does not require a signature.</p>
+              <p>Thank you for your business!</p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `;
+    printWindow.document.write(html);
+    printWindow.document.close();
+  };
+
   return (
     <div className="page-container">
       <PageHeader title="Receipts" subtitle="Cash & bank entries" icon={<ArrowUpDown size={18} />}
@@ -97,6 +162,13 @@ export function Receipts() {
               </div>
               <p className={`text-sm font-bold amount flex-shrink-0 ${t.type === 'CR' ? 'text-success' : 'text-danger'}`}>{t.type === 'CR' ? '+' : '-'}{formatCurrency(t.amount)}</p>
               <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <button 
+                  onClick={() => downloadReceipt(t, custMap[t.customerId || ''])} 
+                  className="w-7 h-7 rounded-lg bg-success/10 flex items-center justify-center text-success hover:bg-success/20"
+                  title="Download PDF Receipt"
+                >
+                  <Download size={12} />
+                </button>
                 <button onClick={() => openEdit(t)} className="w-7 h-7 rounded-lg bg-white/5 flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10"><Pencil size={12} /></button>
                 <button onClick={() => setDeleteTarget(t.id)} className="w-7 h-7 rounded-lg bg-neon-red/10 flex items-center justify-center text-neon-red hover:bg-neon-red/20"><Trash2 size={12} /></button>
               </div>
@@ -124,7 +196,21 @@ export function Receipts() {
           <Input label="Ref No" value={form.refNo} onChange={set('refNo')} placeholder="Cheque / UTR no." />
         </div>
       </Modal>
-      <ConfirmDialog open={!!deleteTarget} onClose={() => setDeleteTarget(null)} onConfirm={async () => { await deleteTransaction(deleteTarget!); setDeleteTarget(null); await load(); }} title="Delete Transaction" message="Delete this transaction?" />
+      <ConfirmDialog
+        open={!!deleteTarget}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={async () => {
+          try {
+            await deleteTransaction(deleteTarget!);
+            setDeleteTarget(null);
+            await load();
+          } catch (e: any) {
+            alert('Failed to delete transaction: ' + e.message);
+          }
+        }}
+        title="Delete Transaction"
+        message="Delete this transaction? This cannot be undone."
+      />
     </div>
   );
 }

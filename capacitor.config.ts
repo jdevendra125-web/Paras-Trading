@@ -1,8 +1,8 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.digitalledger.app',
-  appName: 'Digital Ledger',
+  appId: 'com.parastrading.app',
+  appName: 'Laal Vahi',
   webDir: 'dist',
   server: {
     androidScheme: 'https',

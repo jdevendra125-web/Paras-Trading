@@ -2,20 +2,21 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
-  TrendingUp, TrendingDown, FileText, Users, Plus,
+  TrendingUp, FileText, Users, Plus,
   IndianRupee, ArrowUpRight, Clock, CheckCircle,
 } from 'lucide-react';
 import { PageHeader } from '../components/layout/PageHeader';
 import { CardSkeleton } from '../components/ui/Skeleton';
-import { getInvoices, getCustomers, getTransactions, calculateInvoiceTotal } from '../lib/storage';
+import { getInvoices, getCustomers, getTransactions, calculateInvoiceTotal, getSettings } from '../lib/storage';
 import { formatCurrency, formatDateShort } from '../lib/utils';
-import type { InvoiceData, Transaction } from '../types';
+import type { InvoiceData, Transaction, UserSettings } from '../types';
 
 interface Stats {
   totalRevenue: number;
   totalInvoices: number;
   totalCustomers: number;
   totalOutstanding: number;
+  collectionRate: number;
   recentInvoices: InvoiceData[];
   recentTxns: Transaction[];
 }
@@ -32,21 +33,24 @@ const item = { hidden: { opacity: 0, y: 16 }, show: { opacity: 1, y: 0, transiti
 
 export function Dashboard() {
   const [stats, setStats] = useState<Stats | null>(null);
+  const [settings, setSettings] = useState<UserSettings | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function load() {
-      const [invoices, customers, transactions] = await Promise.all([getInvoices(), getCustomers(), getTransactions()]);
-      const totalRevenue = invoices.reduce((sum, inv) => sum + (inv.totalAmount || calculateInvoiceTotal(inv)), 0);
-      const paidIds = new Set(transactions.filter(t => t.type === 'CR').map(t => t.customerId));
-      const totalOutstanding = invoices
-        .filter(inv => !paidIds.has(inv.customerId))
-        .reduce((sum, inv) => sum + (inv.totalAmount || 0), 0);
+      const [invoices, customers, transactions, userSettings] = await Promise.all([getInvoices(), getCustomers(), getTransactions(), getSettings()]);
+      setSettings(userSettings);
+      
+      const totalInvoiced = invoices.reduce((sum, inv) => sum + (inv.totalAmount || calculateInvoiceTotal(inv)), 0);
+      const totalPaid = transactions.filter(t => t.type === 'CR').reduce((sum, t) => sum + t.amount, 0);
+      const collectionRate = totalInvoiced > 0 ? (totalPaid / totalInvoiced) * 100 : 0;
+      
       setStats({
-        totalRevenue,
+        totalRevenue: totalInvoiced,
         totalInvoices: invoices.length,
         totalCustomers: customers.length,
-        totalOutstanding,
+        totalOutstanding: Math.max(0, totalInvoiced - totalPaid),
+        collectionRate,
         recentInvoices: invoices.slice(0, 5),
         recentTxns: transactions.slice(0, 5),
       });
@@ -58,11 +62,11 @@ export function Dashboard() {
   return (
     <div className="page-container">
       <PageHeader
-        title="Digital Laal Vahi"
-        subtitle="Business Overview & Ledger Summary"
+        title={settings?.companyName || 'Digital Laal Vahi'}
+        subtitle={settings?.proprietorName ? `Welcome, ${settings.proprietorName}` : 'Business Overview & Summary'}
         action={
-          <Link to="/new" className="btn-primary text-xs px-4 py-2.5">
-            <Plus size={16} /> Create Invoice
+          <Link to="/new" className="btn-primary text-xs px-3 py-2 md:px-4 md:py-2.5">
+            <Plus size={16} /> <span className="hidden sm:inline">Create Invoice</span><span className="sm:hidden">New Entry</span>
           </Link>
         }
       />
@@ -87,6 +91,25 @@ export function Dashboard() {
               </div>
             </motion.div>
           ))}
+        </motion.div>
+      )}
+
+      {/* Collection Progress */}
+      {!loading && stats && (
+        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="glass-card p-5 mb-8 bg-gradient-to-br from-bg-card to-success/5 border-success/10">
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-sm font-bold text-content-primary">Payment Collection Efficiency</p>
+            <p className="text-sm font-black text-success">{stats.collectionRate.toFixed(1)}%</p>
+          </div>
+          <div className="h-2.5 w-full bg-bg-secondary rounded-full overflow-hidden">
+            <motion.div 
+              initial={{ width: 0 }}
+              animate={{ width: `${stats.collectionRate}%` }}
+              transition={{ duration: 1.2, ease: 'easeOut' }}
+              className="h-full bg-gradient-to-r from-success to-green-500 rounded-full"
+            />
+          </div>
+          <p className="text-[10px] text-content-muted mt-2 font-bold uppercase tracking-widest">Target: 100% Recovery</p>
         </motion.div>
       )}
 
@@ -120,7 +143,9 @@ export function Dashboard() {
                 <p className="text-sm font-bold">Your ledger is empty</p>
                 <Link to="/new" className="text-xs text-accent-red mt-2 hover:underline font-bold">Record your first entry</Link>
               </div>
-            ) : stats?.recentInvoices.map((inv, idx) => (
+            ) : stats?.recentInvoices.map((inv, idx) => {
+              const isPaid = (stats.recentTxns.filter(t => t.customerId === inv.customerId && t.type === 'CR').reduce((s, t) => s + t.amount, 0)) >= (inv.totalAmount || 0);
+              return (
               <Link
                 key={inv.invoiceNo}
                 to={`/preview/${encodeURIComponent(inv.invoiceNo)}`}
@@ -137,10 +162,13 @@ export function Dashboard() {
                   <p className="text-base font-bold amount text-success">
                     {formatCurrency(inv.totalAmount || 0)}
                   </p>
-                  <p className="text-[10px] text-accent-red uppercase font-bold tracking-widest mt-0.5">Pending</p>
+                  <p className={`text-[10px] uppercase font-bold tracking-widest mt-0.5 ${isPaid ? 'text-success' : 'text-accent-red'}`}>
+                    {isPaid ? 'Paid' : 'Pending'}
+                  </p>
                 </div>
               </Link>
-            ))}
+              );
+            })}
           </div>
         </motion.div>
 
@@ -158,13 +186,13 @@ export function Dashboard() {
                 <motion.div
                   whileHover={{ x: 6, scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
-                  className="bg-bg-card border border-content-primary/5 rounded-[2rem] p-5 flex items-center lg:items-start gap-4 hover:border-accent-red/20 transition-all duration-300 group h-full shadow-lg"
+                  className="bg-bg-card border border-content-primary/5 rounded-[1.8rem] p-4 lg:p-5 flex items-center lg:items-start gap-3 lg:gap-4 hover:border-accent-red/20 transition-all duration-300 group h-full shadow-lg overflow-hidden"
                 >
-                  <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${color} flex items-center justify-center ${glow} flex-shrink-0 group-hover:rotate-6 transition-transform`}>
-                    <Icon size={22} className="text-white" />
+                  <div className={`w-10 h-10 lg:w-12 lg:h-12 rounded-[1rem] lg:rounded-2xl bg-gradient-to-br ${color} flex items-center justify-center ${glow} flex-shrink-0 group-hover:rotate-6 transition-transform`}>
+                    <Icon size={18} className="text-white lg:size-[22px]" />
                   </div>
-                  <div>
-                    <p className="text-base font-bold text-content-primary">{label}</p>
+                  <div className="min-w-0">
+                    <p className="text-sm lg:text-base font-bold text-content-primary truncate">{label}</p>
                     <p className="hidden lg:block text-[11px] font-medium text-content-muted mt-1 line-clamp-1">{desc}</p>
                   </div>
                 </motion.div>

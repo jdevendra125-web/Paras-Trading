@@ -1,11 +1,14 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { IndianRupee, AlertCircle, ArrowUpRight } from 'lucide-react';
+import { IndianRupee, AlertCircle, ArrowUpRight, CheckCircle, Wallet } from 'lucide-react';
 import { PageHeader } from '../components/layout/PageHeader';
 import { TableSkeleton } from '../components/ui/Skeleton';
-import { getInvoices, getTransactions, getCustomers } from '../lib/storage';
-import { formatCurrency, formatDateShort } from '../lib/utils';
+import { Modal } from '../components/ui/Modal';
+import { Input, Select } from '../components/ui/Input';
+import { Button } from '../components/ui/Button';
+import { getInvoices, getTransactions, getCustomers, addTransaction } from '../lib/storage';
+import { formatCurrency, formatDateShort, todayISO } from '../lib/utils';
 import type { InvoiceData, Customer, Transaction } from '../types';
 
 export function Outstandings() {
@@ -13,34 +16,69 @@ export function Outstandings() {
   const [invoices, setInvoices] = useState<InvoiceData[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  
+  // Quick Pay State
+  const [payTarget, setPayTarget] = useState<any | null>(null);
+  const [payForm, setPayForm] = useState({ amount: '', mode: 'Cash', date: todayISO() });
+  const [saving, setSaving] = useState(false);
 
-  useEffect(() => {
-    Promise.all([getInvoices(), getCustomers(), getTransactions()]).then(([invs, custs, txns]) => {
-      setInvoices(invs); setCustomers(custs); setTransactions(txns); setLoading(false);
-    });
-  }, []);
+  const load = async () => {
+    setLoading(true);
+    const [invs, custs, txns] = await Promise.all([getInvoices(), getCustomers(), getTransactions()]);
+    setInvoices(invs); setCustomers(custs); setTransactions(txns); setLoading(false);
+  };
+
+  useEffect(() => { load(); }, []);
 
   const customerMap = useMemo(() => Object.fromEntries(customers.map(c => [c.id, c])), [customers]);
 
   const outstandingData = useMemo(() => {
-    const paidMap: Record<string, number> = {};
-    transactions.filter(t => t.type === 'CR').forEach(t => {
-      if (t.customerId) paidMap[t.customerId] = (paidMap[t.customerId] || 0) + t.amount;
-    });
-    const invoiceMap: Record<string, { customer: Customer | undefined; invoices: InvoiceData[]; total: number; paid: number }> = {};
-    invoices.forEach(inv => {
-      const cid = inv.customerId || 'unknown';
-      if (!invoiceMap[cid]) invoiceMap[cid] = { customer: customerMap[cid], invoices: [], total: 0, paid: paidMap[cid] || 0 };
-      invoiceMap[cid].invoices.push(inv);
-      invoiceMap[cid].total += inv.totalAmount || 0;
-    });
-    return Object.values(invoiceMap)
-      .map(d => ({ ...d, outstanding: Math.max(0, d.total - d.paid) }))
-      .filter(d => d.outstanding > 0)
+    return customers.map(customer => {
+      const customerInvoices = invoices.filter(inv => inv.customerId === customer.id);
+      const customerTxns = transactions.filter(t => t.customerId === customer.id);
+      
+      const totalBilled = customerInvoices.reduce((s, inv) => s + (inv.totalAmount || 0), 0);
+      const totalDR = customerTxns.filter(t => t.type === 'DR').reduce((s, t) => s + t.amount, 0);
+      const totalCR = customerTxns.filter(t => t.type === 'CR').reduce((s, t) => s + t.amount, 0);
+      
+      // Outstanding = (Opening Balance + Invoices + Debit Transactions) - Credit Transactions
+      const opening = Number(customer.openingBalance) || 0;
+      const outstanding = (opening + totalBilled + totalDR) - totalCR;
+
+      return {
+        customer,
+        invoices: customerInvoices,
+        total: totalBilled + totalDR + opening,
+        paid: totalCR,
+        outstanding
+      };
+    }).filter(d => d.outstanding > 0.01) // Filter out zero or negative balances
       .sort((a, b) => b.outstanding - a.outstanding);
   }, [invoices, customers, transactions]);
 
   const totalOutstanding = useMemo(() => outstandingData.reduce((s, d) => s + d.outstanding, 0), [outstandingData]);
+
+  const handleQuickPay = async () => {
+    if (!payTarget || !payForm.amount) return;
+    setSaving(true);
+    try {
+      await addTransaction({
+        date: payForm.date,
+        amount: Number(payForm.amount),
+        type: 'CR',
+        mode: payForm.mode as 'Bank' | 'Cash',
+        customerId: payTarget.customer.id,
+        particulars: `Payment received from ${payTarget.customer.name}`,
+        refNo: 'Quick Pay'
+      });
+      setPayTarget(null);
+      await load();
+    } catch (e: any) {
+      alert('Payment failed: ' + e.message);
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <div className="page-container">
@@ -74,19 +112,67 @@ export function Outstandings() {
                   <p className="text-xs text-slate-500 mt-0.5">{d.invoices.length} invoice{d.invoices.length > 1 ? 's' : ''} · Billed: {formatCurrency(d.total)}</p>
                   <p className="text-xs text-slate-500">Paid: <span className="text-neon-green">{formatCurrency(d.paid)}</span></p>
                 </div>
-                <div className="text-right flex-shrink-0">
+                <div className="text-right flex-shrink-0 flex flex-col items-end gap-2">
                   <p className="text-sm font-bold amount text-warning">{formatCurrency(d.outstanding)}</p>
-                  {d.customer && (
-                    <Link to={`/outstanding-bills/${d.customer.id}`} className="text-xs text-accent-blue flex items-center gap-0.5 mt-1 justify-end hover:underline">
-                      View <ArrowUpRight size={11} />
-                    </Link>
-                  )}
+                  <div className="flex items-center gap-2">
+                    <button 
+                      onClick={() => {
+                        setPayTarget(d);
+                        setPayForm({ ...payForm, amount: String(d.outstanding) });
+                      }}
+                      className="text-[10px] font-bold uppercase tracking-widest bg-success/10 text-success border border-success/20 px-3 py-1.5 rounded-lg hover:bg-success/20 transition-all flex items-center gap-1.5"
+                    >
+                      <CheckCircle size={10} /> Mark Paid
+                    </button>
+                    {d.customer && (
+                      <Link to={`/outstanding-bills/${d.customer.id}`} className="text-xs text-slate-600 flex items-center gap-0.5 hover:text-white transition-colors">
+                        View <ArrowUpRight size={11} />
+                      </Link>
+                    )}
+                  </div>
                 </div>
               </div>
             </motion.div>
           ))}
         </div>
       )}
+
+      <Modal 
+        open={!!payTarget} 
+        onClose={() => setPayTarget(null)} 
+        title={`Receive Payment: ${payTarget?.customer?.name}`}
+        footer={
+          <div className="flex gap-3">
+            <Button variant="secondary" className="flex-1" onClick={() => setPayTarget(null)}>Cancel</Button>
+            <Button className="flex-1" loading={saving} onClick={handleQuickPay}>Confirm Payment</Button>
+          </div>
+        }
+      >
+        <div className="space-y-4">
+          <div className="p-4 rounded-2xl bg-bg-secondary border border-white/5 flex items-center justify-between">
+            <div>
+              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Total Pending</p>
+              <p className="text-lg font-black text-warning">{payTarget ? formatCurrency(payTarget.outstanding) : ''}</p>
+            </div>
+            <Wallet size={24} className="text-slate-700" />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <Input label="Date" type="date" value={payForm.date} onChange={e => setPayForm({...payForm, date: e.target.value})} />
+            <Input label="Amount (₹)" type="number" value={payForm.amount} onChange={e => setPayForm({...payForm, amount: e.target.value})} />
+          </div>
+          
+          <Select 
+            label="Payment Mode" 
+            value={payForm.mode} 
+            onChange={e => setPayForm({...payForm, mode: e.target.value})}
+            options={[
+              { value: 'Cash', label: 'Cash Payment' },
+              { value: 'Bank', label: 'Bank Transfer' }
+            ]}
+          />
+        </div>
+      </Modal>
     </div>
   );
 }

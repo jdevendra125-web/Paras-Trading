@@ -5,7 +5,7 @@ import { Plus, Trash2, ChevronDown, ChevronUp, Save } from 'lucide-react';
 import { PageHeader } from '../../components/layout/PageHeader';
 import { Input, Select } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
-import { getCustomers, getMasterItems, calculateInvoiceTotal, getSettings } from '../../lib/storage';
+import { getCustomers, getMasterItems, calculateInvoiceTotal, getSettings, getSuggestedItems } from '../../lib/storage';
 import { formatCurrency } from '../../lib/utils';
 import type { InvoiceData, InvoiceItem, Customer, MasterItem, UserSettings } from '../../types';
 
@@ -13,14 +13,23 @@ const UNITS = ['Kgs', 'Nos', 'Ltrs', 'Mtrs', 'Bags', 'Boxes', 'Pcs'];
 const TRANSPORT_OPTS = ['Private', 'GVK', 'Jain Transport', 'Other'].map(v => ({ value: v, label: v }));
 const MODE_OPTS = ['By Road', 'By Rail', 'By Air', 'By Ship'].map(v => ({ value: v, label: v }));
 
-interface Props { data: InvoiceData; onChange: (d: InvoiceData) => void; onGenerate: () => Promise<void>; }
+const NUMERIC_KEYS: Array<keyof InvoiceData> = ['loadingCharges', 'transportCharges', 'otherCharges', 'hamali'];
 
-export function InvoiceForm({ data, onChange, onGenerate }: Props) {
+interface Props {
+  data: InvoiceData;
+  onChange: (d: InvoiceData) => void;
+  onGenerate: () => Promise<void>;
+  defaultsLoading?: boolean; // Bug 11: disable save until invoice number is resolved
+}
+
+export function InvoiceForm({ data, onChange, onGenerate, defaultsLoading = false }: Props) {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [masterItems, setMasterItems] = useState<MasterItem[]>([]);
   const [settings, setSettings] = useState<UserSettings | null>(null);
   const [saving, setSaving] = useState(false);
   const [showTransport, setShowTransport] = useState(false);
+  const [frequentItems, setFrequentItems] = useState<MasterItem[]>([]);
+  const [customerItems, setCustomerItems] = useState<MasterItem[]>([]);
 
   useEffect(() => {
     Promise.all([getCustomers(), getMasterItems(), getSettings()]).then(([c, m, s]) => {
@@ -28,8 +37,21 @@ export function InvoiceForm({ data, onChange, onGenerate }: Props) {
     });
   }, []);
 
-  const set = useCallback((key: keyof InvoiceData) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
-    onChange({ ...data, [key]: e.target.value }), [data, onChange]);
+  useEffect(() => {
+    getSuggestedItems(data.customerId).then(res => {
+      setFrequentItems(res.frequent);
+      setCustomerItems(res.customerSpecific);
+    });
+  }, [data.customerId]);
+
+  // Bug 8 fix: numeric charge fields are stored as number|'' not raw string
+  const set = useCallback((key: keyof InvoiceData) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const val = e.target.value;
+    const parsed = NUMERIC_KEYS.includes(key)
+      ? (val === '' ? '' : Number(val))
+      : val;
+    onChange({ ...data, [key]: parsed });
+  }, [data, onChange]);
 
   const setCustomer = (id: string) => {
     const cust = customers.find(c => c.id === id);
@@ -66,7 +88,7 @@ export function InvoiceForm({ data, onChange, onGenerate }: Props) {
   const handleGenerate = async () => { setSaving(true); try { await onGenerate(); } finally { setSaving(false); } };
 
   const total = calculateInvoiceTotal(data);
-  const isGoods = settings?.invoiceFormat !== 'service';
+  const isService = data.invoiceType === 'service';
   const showHamali = settings?.enableHamali !== false;
 
   const Field = ({ label, children }: { label: string; children: React.ReactNode }) => (
@@ -78,6 +100,22 @@ export function InvoiceForm({ data, onChange, onGenerate }: Props) {
       <PageHeader title="New Invoice" back icon={<Save size={18} />}
         action={<span className="text-xs text-slate-500 amount">Total: <span className="text-neon-green font-bold">{formatCurrency(total)}</span></span>}
       />
+
+      {/* Invoice Type Toggle */}
+      <div className="flex gap-2 p-1 bg-bg-secondary/50 border border-content-primary/5 rounded-2xl mb-4 max-w-fit">
+        <button
+          onClick={() => onChange({ ...data, invoiceType: 'goods' })}
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${!isService ? 'bg-accent-red text-white shadow-glow-red' : 'text-content-secondary hover:bg-bg-elevated'}`}
+        >
+          Product Invoice
+        </button>
+        <button
+          onClick={() => onChange({ ...data, invoiceType: 'service' })}
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${isService ? 'bg-accent-red text-white shadow-glow-red' : 'text-content-secondary hover:bg-bg-elevated'}`}
+        >
+          Service Invoice
+        </button>
+      </div>
 
       {/* Invoice No & Date */}
       <div className="glass-card p-4 mb-3">
@@ -133,13 +171,25 @@ export function InvoiceForm({ data, onChange, onGenerate }: Props) {
                   <label className="input-label">Description</label>
                   <select className="input-field text-sm" value={item.description} onChange={setItem(idx, 'description')} style={{ backgroundImage: 'none' }}>
                     <option value="" className="bg-bg-card">— Select item —</option>
-                    {masterItems.map(m => <option key={m.id} value={m.description} className="bg-bg-card">{m.description}</option>)}
+                    {customerItems.length > 0 && (
+                      <optgroup label="⭐ Previous Purchases" className="bg-bg-card text-accent-gold">
+                        {customerItems.map(m => <option key={m.id} value={m.description} className="bg-bg-card text-white font-medium">{m.description}</option>)}
+                      </optgroup>
+                    )}
+                    {frequentItems.length > 0 && (
+                      <optgroup label="🔥 Most Sold Items" className="bg-bg-card text-accent-red">
+                        {frequentItems.map(m => <option key={m.id} value={m.description} className="bg-bg-card text-white font-medium">{m.description}</option>)}
+                      </optgroup>
+                    )}
+                    <optgroup label="All Master Items" className="bg-bg-card text-content-muted">
+                      {masterItems.map(m => <option key={m.id} value={m.description} className="bg-bg-card text-white">{m.description}</option>)}
+                    </optgroup>
                   </select>
                 </div>
                 <div className="grid grid-cols-3 gap-2">
-                  {isGoods && <Input label="Qty" type="number" value={item.qty === '' ? '' : String(item.qty)} onChange={setItem(idx, 'qty')} placeholder="0" />}
-                  <div className={isGoods ? '' : 'col-span-2'}>
-                    <label className="input-label">{isGoods ? 'Rate (₹)' : 'Invoice Amt'}</label>
+                  {!isService && <Input label="Qty" type="number" value={item.qty === '' ? '' : String(item.qty)} onChange={setItem(idx, 'qty')} placeholder="0" />}
+                  <div className={!isService ? '' : 'col-span-2'}>
+                    <label className="input-label">{!isService ? 'Rate (₹)' : 'Invoice Amt'}</label>
                     <input type="number" className="input-field" value={item.inclusiveRate === '' ? '' : String(item.inclusiveRate)} onChange={setItem(idx, 'inclusiveRate')} placeholder="0" />
                   </div>
                   <div>
@@ -203,8 +253,15 @@ export function InvoiceForm({ data, onChange, onGenerate }: Props) {
         </div>
       </div>
 
-      <Button onClick={handleGenerate} loading={saving} className="w-full" size="lg" icon={<Save size={16} />}>
-        Save & Generate Invoice
+      <Button
+        onClick={handleGenerate}
+        loading={saving || defaultsLoading}
+        disabled={defaultsLoading}
+        className="w-full"
+        size="lg"
+        icon={<Save size={16} />}
+      >
+        {defaultsLoading ? 'Preparing Invoice…' : 'Save & Generate Invoice'}
       </Button>
     </div>
   );

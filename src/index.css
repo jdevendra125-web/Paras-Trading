@@ -55,13 +55,35 @@
 
   h1, h2, h3, h4 {
     color: rgb(var(--content-primary));
-    @apply font-display tracking-tight;
+    @apply font-display tracking-tight font-bold;
+  }
+}
+
+@layer utilities {
+  .typography-display {
+    @apply font-display tracking-tight leading-none uppercase;
+  }
+  
+  .typography-body {
+    @apply font-sans leading-relaxed text-content-secondary;
+  }
+
+  .premium-gradient-text {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-accent-red to-accent-gold;
+  }
+  
+  .shadow-card {
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  }
+  
+  .shadow-card-hover {
+    box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
   }
 }
 
 @layer components {
   .page-container {
-    @apply px-4 py-6 md:px-8 md:py-10 max-w-7xl mx-auto min-h-dvh;
+    @apply px-3 pb-4 pt-0 md:px-8 md:pb-10 max-w-7xl mx-auto min-h-dvh;
   }
 
   .glass-card {
@@ -79,15 +101,19 @@
   }
 
   .input-field {
-    @apply w-full bg-bg-elevated border border-content-primary/10 rounded-2xl px-4 py-3.5 text-sm focus:outline-none focus:border-accent-red focus:ring-4 focus:ring-accent-red focus:ring-opacity-10 transition-all duration-300 placeholder:text-content-muted;
+    @apply w-full bg-bg-elevated border border-content-primary/10 rounded-xl md:rounded-2xl px-3 py-3 md:px-4 md:py-3.5 text-sm focus:outline-none focus:border-accent-red focus:ring-4 focus:ring-accent-red focus:ring-opacity-10 transition-all duration-300 placeholder:text-content-muted;
   }
   
   .btn-primary {
-    @apply bg-gradient-to-r from-accent-red to-accent-crimson text-white font-bold rounded-2xl px-6 py-3.5 flex items-center justify-center gap-2 hover:opacity-90 active:scale-[0.98] transition-all duration-300 shadow-glow-red;
+    @apply bg-gradient-to-r from-accent-red to-accent-crimson text-white font-bold rounded-xl md:rounded-2xl px-4 py-3 md:px-6 md:py-3.5 flex items-center justify-center gap-2 hover:opacity-90 active:scale-[0.98] transition-all duration-300 shadow-glow-red;
   }
 
   .btn-gold {
-    @apply bg-gradient-to-r from-accent-gold to-accent-amber text-white font-bold rounded-2xl px-6 py-3.5 flex items-center justify-center gap-2 hover:opacity-90 active:scale-[0.98] transition-all duration-300;
+    @apply bg-gradient-to-r from-accent-gold to-accent-amber text-white font-bold rounded-xl md:rounded-2xl px-4 py-3 md:px-6 md:py-3.5 flex items-center justify-center gap-2 hover:opacity-90 active:scale-[0.98] transition-all duration-300;
+  }
+
+  .touch-target {
+    @apply min-h-[44px] min-w-[44px] flex items-center justify-center;
   }
 
   .card-premium {
@@ -96,6 +122,10 @@
 
   .amount {
     @apply font-mono tracking-tight;
+  }
+
+  .input-label {
+    @apply text-[10px] md:text-[11px] font-bold text-content-muted uppercase tracking-[0.15em] mb-1.5 md:mb-2 ml-1;
   }
 }
 
