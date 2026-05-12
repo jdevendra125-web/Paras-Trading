@@ -100,9 +100,9 @@ export function Login() {
 
 
 
-      {/* Main Content Area - Auto Scaling to Fit */}
-      <main className="flex-1 flex flex-col items-center justify-center p-4 z-10 min-h-0 overflow-y-auto">
-        <div className="w-full max-w-sm flex flex-col items-center justify-center min-h-max py-4">
+      {/* Main Content Area - Fixed, no scrolling */}
+      <main className="flex-1 flex flex-col items-center justify-center p-4 z-10 min-h-0 overflow-hidden">
+        <div className="w-full max-w-sm flex flex-col items-center justify-center h-full max-h-full">
           
           {/* Modern App Logo - Always visible and centered */}
           <motion.div
@@ -125,9 +125,9 @@ export function Login() {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="w-full flex-shrink-0"
+            className="w-full"
           >
-            <div className="bg-bg-card border border-content-primary/10 rounded-[2rem] p-6 sm:p-8 shadow-2xl relative overflow-hidden backdrop-blur-xl">
+            <div className="bg-bg-card border border-content-primary/10 rounded-[2rem] p-5 sm:p-8 shadow-2xl relative overflow-hidden backdrop-blur-xl">
               <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-accent-red to-transparent opacity-50" />
               
               <h2 className="text-lg sm:text-xl font-bold text-content-primary mb-1 text-center">
@@ -140,7 +140,7 @@ export function Login() {
               <form onSubmit={forgotPw ? handleForgotPassword : handleSubmit} className="space-y-4">
                 <input type="text" value={honeypot} onChange={e => setHoneypot(e.target.value)} className="hidden" tabIndex={-1} autoComplete="off" />
 
-                <div className="space-y-1.5">
+                <div className="space-y-1">
                   <label className="text-[10px] font-bold text-content-muted uppercase tracking-wider ml-1">Email Terminal</label>
                   <div className="relative">
                     <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-content-muted"><Mail size={14} /></span>
@@ -156,8 +156,8 @@ export function Login() {
                 </div>
 
                 {!forgotPw && (
-                  <div className="space-y-1.5">
-                    <div className="flex items-center justify-between px-1">
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between ml-1">
                       <label className="text-[10px] font-bold text-content-muted uppercase tracking-wider">Username</label>
                       {!isSignUp && (
                         <button type="button" onClick={() => setForgotPw(true)} className="text-[10px] text-accent-blue hover:underline font-bold">Forgot?</button>
@@ -203,7 +203,7 @@ export function Login() {
               </form>
 
               {!forgotPw && (
-                <div className="text-center mt-5">
+                <div className="text-center mt-4">
                   <button 
                     onClick={() => { setIsSignUp(!isSignUp); setError(''); setMessage(''); }}
                     className="text-[10px] sm:text-xs text-content-secondary hover:text-content-primary transition-colors flex items-center justify-center gap-1.5 mx-auto font-medium"
