@@ -45,13 +45,38 @@ export function InvoicePreviewPage({ data, onEdit }: Props) {
 
   const isSameState = settings?.gstin?.slice(0, 2) === data.receiverStateCode;
 
+  
+  const capturePDF = async () => {
+    if (!printRef.current) return null;
+    return await html2canvas(printRef.current, {
+      scale: 2,
+      backgroundColor: '#fff',
+      useCORS: true,
+      windowWidth: printRef.current.scrollWidth,
+      windowHeight: printRef.current.scrollHeight,
+      onclone: (doc) => {
+        const el = doc.getElementById('invoice-print-content');
+        if (el) {
+          let p = el.parentElement;
+          while (p && p.tagName !== 'BODY') {
+            p.style.overflow = 'visible';
+            p.style.height = 'auto';
+            p.style.maxHeight = 'none';
+            p = p.parentElement;
+          }
+        }
+      }
+    });
+  };
+
   const handlePrint = () => window.print();
 
   const handleDownload = async () => {
     if (!printRef.current) return;
     setDownloading(true);
     try {
-      const canvas = await html2canvas(printRef.current, { scale: 2, backgroundColor: '#fff', useCORS: true });
+      const canvas = await capturePDF();
+      if (!canvas) return;
       const imgData = canvas.toDataURL('image/png');
       const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
       const w = pdf.internal.pageSize.getWidth();
@@ -70,7 +95,8 @@ export function InvoicePreviewPage({ data, onEdit }: Props) {
     if (!printRef.current) return;
     setDownloading(true);
     try {
-      const canvas = await html2canvas(printRef.current, { scale: 2, backgroundColor: '#fff', useCORS: true });
+      const canvas = await capturePDF();
+      if (!canvas) return;
       const imgData = canvas.toDataURL('image/png');
       const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
       const w = pdf.internal.pageSize.getWidth();
@@ -117,7 +143,7 @@ export function InvoicePreviewPage({ data, onEdit }: Props) {
       </div>
 
       {/* Invoice Document */}
-      <div ref={printRef} className="bg-white text-gray-900 rounded-2xl overflow-hidden print:rounded-none" style={{ fontFamily: 'Arial, sans-serif', fontSize: '12px' }}>
+      <div id="invoice-print-content" ref={printRef} className="bg-white text-gray-900 rounded-2xl overflow-hidden print:rounded-none" style={{ fontFamily: 'Arial, sans-serif', fontSize: '12px' }}>
         {/* Header */}
         <div className="px-8 py-8 border-b border-gray-100">
           <div className="flex justify-between items-start">

@@ -84,7 +84,7 @@
 
 @layer components {
   .page-container {
-    @apply px-3 pb-4 pt-0 md:px-8 md:pb-10 max-w-7xl mx-auto min-h-dvh;
+    @apply px-3 pb-4 pt-0 md:px-8 md:pb-10 max-w-7xl mx-auto h-full overflow-y-auto;
   }
 
   .glass-card {

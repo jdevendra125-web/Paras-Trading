@@ -40,10 +40,11 @@ export function BankAccounts() {
   };
 
   return (
-    <div className="page-container">
+    <div className="page-container flex flex-col h-full overflow-hidden">
       <PageHeader title="Bank Accounts" subtitle="Manage bank accounts" icon={<Landmark size={18} />} back
         action={<button onClick={openAdd} className="btn-primary text-xs px-3 py-2"><Plus size={14} /> Add</button>}
       />
+      <div className="flex-1 overflow-y-auto min-h-0 hide-scrollbar pb-4">
       {loading ? <TableSkeleton rows={3} /> : accounts.length === 0 ? (
         <div className="glass-card flex flex-col items-center py-14">
           <Landmark size={36} className="mb-3 opacity-30 text-slate-600" />
@@ -69,6 +70,7 @@ export function BankAccounts() {
           ))}
         </div>
       )}
+      </div>
       <Modal open={showForm} onClose={() => setShowForm(false)} title={editing ? 'Edit Account' : 'Add Bank Account'} size="sm"
         footer={<div className="flex gap-3"><Button variant="secondary" className="flex-1" onClick={() => setShowForm(false)}>Cancel</Button><Button className="flex-1" loading={saving} onClick={handleSave}>Save</Button></div>}
       >

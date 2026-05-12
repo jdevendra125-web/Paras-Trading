@@ -11,9 +11,9 @@ export function Masters() {
     { label: 'Bank Accounts', subtitle: 'Manage bank accounts', path: '/bank-accounts', icon: Landmark, color: 'text-accent-blue', bg: 'bg-accent-blue/10', border: 'border-accent-blue/20' },
   ];
   return (
-    <div className="page-container">
+    <div className="page-container flex flex-col h-full overflow-hidden">
       <PageHeader title="Masters" subtitle="Reference data" back />
-      <div className="space-y-3">
+      <div className="flex-1 overflow-y-auto min-h-0 hide-scrollbar pb-4 space-y-3">
         {options.map((opt, i) => (
           <motion.div key={opt.path} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}>
             <Link to={opt.path} className="glass-card-hover p-5 flex items-center gap-4 block">

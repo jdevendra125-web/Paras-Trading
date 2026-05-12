@@ -28,10 +28,11 @@ export function Items() {
   };
 
   return (
-    <div className="page-container">
+    <div className="page-container flex flex-col h-full overflow-hidden">
       <PageHeader title="Items Master" subtitle="Product catalog" icon={<Package size={18} />} back
         action={<button onClick={() => { setEditing(null); setShowAdd(true); }} className="btn-primary text-xs px-3 py-2"><Plus size={14} /> Add</button>}
       />
+      <div className="flex-1 overflow-y-auto min-h-0 hide-scrollbar pb-4">
       {loading ? <TableSkeleton rows={5} /> : items.length === 0 ? (
         <div className="glass-card flex flex-col items-center py-14">
           <Package size={36} className="mb-3 opacity-30 text-slate-600" />
@@ -56,6 +57,7 @@ export function Items() {
           ))}
         </div>
       )}
+      </div>
       <AddItemModal open={showAdd} onClose={() => { setShowAdd(false); setEditing(null); }} onSaved={load} editing={editing} />
       <ConfirmDialog open={!!deleteTarget} onClose={() => setDeleteTarget(null)} onConfirm={handleDelete} loading={deleting} title="Delete Item" message="Delete this item from master list?" />
     </div>

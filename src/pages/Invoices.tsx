@@ -37,7 +37,7 @@ export function Invoices() {
   const totalAmount = useMemo(() => filtered.reduce((s, i) => s + (i.totalAmount || 0), 0), [filtered]);
 
   return (
-    <div className="page-container">
+    <div className="page-container flex flex-col h-full overflow-hidden">
       <PageHeader title="Invoices" subtitle={`${invoices.length} invoices`} icon={<FileText size={18} />}
         action={<Link to="/new" className="btn-primary text-xs px-3 py-2"><Plus size={14} /> New</Link>}
       />
@@ -52,20 +52,22 @@ export function Invoices() {
           </div>
         </motion.div>
       )}
-      <div className="relative mb-4">
+      <div className="relative mb-4 flex-shrink-0">
         <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
         <input className="input-field pl-10" placeholder="Search invoices..." value={search} onChange={e => setSearch(e.target.value)} />
       </div>
-      {loading ? <TableSkeleton rows={8} /> : filtered.length === 0 ? (
-        <div className="glass-card flex flex-col items-center py-14">
-          <FileText size={36} className="mb-3 opacity-30 text-slate-600" />
-          <p className="text-sm text-slate-500">{search ? 'No invoices found' : 'No invoices yet'}</p>
-          {!search && <Link to="/new" className="mt-3 text-xs text-accent-blue hover:underline">Create first invoice →</Link>}
-        </div>
-      ) : (
-        <>
-          {/* Desktop Table */}
-          <div className="hidden md:block glass-card overflow-hidden">
+
+      <div className="flex-1 overflow-y-auto min-h-0 hide-scrollbar pb-4">
+        {loading ? <TableSkeleton rows={8} /> : filtered.length === 0 ? (
+          <div className="glass-card flex flex-col items-center py-14">
+            <FileText size={36} className="mb-3 opacity-30 text-slate-600" />
+            <p className="text-sm text-slate-500">{search ? 'No invoices found' : 'No invoices yet'}</p>
+            {!search && <Link to="/new" className="mt-3 text-xs text-accent-blue hover:underline">Create first invoice →</Link>}
+          </div>
+        ) : (
+          <>
+            {/* Desktop Table */}
+            <div className="hidden md:block glass-card overflow-hidden">
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="border-b border-content-primary/[0.06] bg-content-primary/[0.02]">
@@ -119,6 +121,7 @@ export function Invoices() {
           </div>
         </>
       )}
+      </div>
       <ConfirmDialog open={!!deleteTarget} onClose={() => setDeleteTarget(null)} onConfirm={handleDelete} loading={deleting} title="Delete Invoice" message={`Delete invoice ${deleteTarget}? This cannot be undone.`} />
     </div>
   );

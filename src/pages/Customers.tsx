@@ -36,15 +36,16 @@ export function Customers() {
   };
 
   return (
-    <div className="page-container">
+    <div className="page-container flex flex-col h-full overflow-hidden">
       <PageHeader title="Customers" subtitle={`${customers.length} customers`} icon={<Users size={18} />}
         action={<button onClick={() => setShowAdd(true)} className="btn-primary text-xs px-3 py-2"><Plus size={14} /> Add</button>}
       />
-      <div className="relative mb-4">
+      <div className="relative mb-4 flex-shrink-0">
         <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
         <input className="input-field pl-10" placeholder="Search customers..." value={search} onChange={e => setSearch(e.target.value)} />
       </div>
 
+      <div className="flex-1 overflow-y-auto min-h-0 hide-scrollbar pb-4">
       {loading ? <TableSkeleton rows={5} /> : filtered.length === 0 ? (
         <div className="glass-card flex flex-col items-center py-14">
           <Users size={36} className="mb-3 opacity-30 text-slate-600" />
@@ -82,6 +83,7 @@ export function Customers() {
           ))}
         </motion.div>
       )}
+      </div>
 
       <AddCustomerModal open={showAdd} onClose={() => { setShowAdd(false); setEditing(null); }} onSaved={load} editing={editing} />
       <ConfirmDialog open={!!deleteTarget} onClose={() => setDeleteTarget(null)} onConfirm={handleDelete} loading={deleting} title="Delete Customer" message="This will permanently delete the customer. Are you sure?" />

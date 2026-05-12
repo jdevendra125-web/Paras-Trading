@@ -106,7 +106,7 @@ export function Outstandings() {
   };
 
   return (
-    <div className="page-container">
+    <div className="page-container flex flex-col h-full overflow-hidden">
       <PageHeader title="Outstanding" subtitle="Pending payments" icon={<IndianRupee size={18} />} />
 
       {!loading && (
@@ -165,6 +165,7 @@ export function Outstandings() {
         </div>
       </div>
 
+      <div className="flex-1 overflow-y-auto min-h-0 hide-scrollbar pb-4">
       {loading ? <TableSkeleton rows={5} /> : outstandingData.length === 0 ? (
         <div className="glass-card flex flex-col items-center py-14">
           <IndianRupee size={36} className="mb-3 opacity-30 text-slate-600" />
@@ -205,6 +206,7 @@ export function Outstandings() {
           ))}
         </div>
       )}
+      </div>
 
       <Modal 
         open={!!payTarget} 
