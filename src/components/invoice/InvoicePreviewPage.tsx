@@ -128,18 +128,28 @@ export function InvoicePreviewPage({ data, onEdit }: Props) {
         const pdfBlob = pdf.output('blob');
         const file = new File([pdfBlob], `${data.invoiceNo.replace(/\//g, '-')}.pdf`, { type: 'application/pdf' });
         
-        if (navigator.canShare && navigator.canShare({ files: [file] })) {
-          await navigator.share({
-            files: [file],
-            title: `Invoice ${data.invoiceNo}`,
-            text: `Greetings from ${settings?.companyName || 'Registered'}.\n\nPlease find attached Invoice No: ${data.invoiceNo} for ${formatCurrency(total)}.`
-          });
+        if (navigator.share) {
+          try {
+            await navigator.share({
+              files: [file],
+              title: `Invoice ${data.invoiceNo}`,
+              text: `Greetings from ${settings?.companyName || 'Registered'}.\n\nPlease find attached Invoice No: ${data.invoiceNo} for ${formatCurrency(total)}.`
+            });
+          } catch (shareErr: any) {
+            if (shareErr.name === 'AbortError' || (shareErr.message && shareErr.message.toLowerCase().includes('cancel'))) {
+              return; // User cancelled
+            }
+            handleWhatsApp();
+          }
         } else {
           handleWhatsApp();
         }
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error sharing PDF:', err);
+      if (err.name === 'AbortError' || (err.message && err.message.toLowerCase().includes('cancel'))) {
+        return;
+      }
       handleWhatsApp();
     } finally { 
       setDownloading(false); 
