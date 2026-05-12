@@ -6,6 +6,8 @@ import { PageHeader } from '../../components/layout/PageHeader';
 import { Input, Select } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
 import { getCustomers, getMasterItems, calculateInvoiceTotal, getSettings, getSuggestedItems } from '../../lib/storage';
+import { AddCustomerModal } from '../modals/AddCustomerModal';
+import { AddItemModal } from '../modals/AddItemModal';
 import { formatCurrency } from '../../lib/utils';
 import type { InvoiceData, InvoiceItem, Customer, MasterItem, UserSettings } from '../../types';
 
@@ -30,12 +32,18 @@ export function InvoiceForm({ data, onChange, onGenerate, defaultsLoading = fals
   const [showTransport, setShowTransport] = useState(false);
   const [frequentItems, setFrequentItems] = useState<MasterItem[]>([]);
   const [customerItems, setCustomerItems] = useState<MasterItem[]>([]);
+  const [showCustomerModal, setShowCustomerModal] = useState(false);
+  const [showItemModal, setShowItemModal] = useState<{isOpen: boolean; rowId: string | null}>({isOpen: false, rowId: null});
+
+  const fetchMasters = useCallback(async () => {
+    const [c, m, s] = await Promise.all([getCustomers(), getMasterItems(), getSettings()]);
+    setCustomers(c); setMasterItems(m); setSettings(s);
+    return { c, m, s };
+  }, []);
 
   useEffect(() => {
-    Promise.all([getCustomers(), getMasterItems(), getSettings()]).then(([c, m, s]) => {
-      setCustomers(c); setMasterItems(m); setSettings(s);
-    });
-  }, []);
+    fetchMasters();
+  }, [fetchMasters]);
 
   useEffect(() => {
     getSuggestedItems(data.customerId).then(res => {
@@ -54,6 +62,10 @@ export function InvoiceForm({ data, onChange, onGenerate, defaultsLoading = fals
   }, [data, onChange]);
 
   const setCustomer = (id: string) => {
+    if (id === 'ADD_NEW') {
+      setShowCustomerModal(true);
+      return;
+    }
     const cust = customers.find(c => c.id === id);
     if (cust) {
       onChange({ ...data, customerId: id, receiverName: cust.name, receiverAddress: cust.address, receiverState: cust.state, receiverStateCode: cust.stateCode, receiverGstin: cust.gstin, receiverRegion: cust.region || '', receiverPhone: cust.phone || '', receiverEmail: cust.email || '' });
@@ -66,6 +78,10 @@ export function InvoiceForm({ data, onChange, onGenerate, defaultsLoading = fals
     const items = [...data.items];
     const val = e.target.value;
     if (key === 'description') {
+      if (val === 'ADD_NEW') {
+        setShowItemModal({ isOpen: true, rowId: items[idx].id });
+        return;
+      }
       const master = masterItems.find(m => m.description === val);
       if (master) { items[idx] = { ...items[idx], description: master.description, hsnCode: master.hsnCode, unit: master.unit, gstRate: master.gstRate, isInclusive: master.isInclusive !== false }; }
       else { items[idx] = { ...items[idx], description: val }; }
@@ -133,6 +149,7 @@ export function InvoiceForm({ data, onChange, onGenerate, defaultsLoading = fals
             <label className="input-label">Select Customer</label>
             <select className="input-field" value={data.customerId || ''} onChange={e => setCustomer(e.target.value)} style={{ backgroundImage: 'none' }}>
               <option value="" className="bg-bg-card">— Select or type manually —</option>
+              <option value="ADD_NEW" className="bg-bg-card text-accent-blue font-bold">+ Add New Customer</option>
               {customers.map(c => <option key={c.id} value={c.id} className="bg-bg-card">{c.name}</option>)}
             </select>
           </div>
@@ -171,6 +188,7 @@ export function InvoiceForm({ data, onChange, onGenerate, defaultsLoading = fals
                   <label className="input-label">Description</label>
                   <select className="input-field text-sm" value={item.description} onChange={setItem(idx, 'description')} style={{ backgroundImage: 'none' }}>
                     <option value="" className="bg-bg-card">— Select item —</option>
+                    <option value="ADD_NEW" className="bg-bg-card text-accent-blue font-bold">+ Add New Item</option>
                     {customerItems.length > 0 && (
                       <optgroup label="⭐ Previous Purchases" className="bg-bg-card text-accent-gold">
                         {customerItems.map(m => <option key={m.id} value={m.description} className="bg-bg-card text-white font-medium">{m.description}</option>)}
@@ -263,6 +281,61 @@ export function InvoiceForm({ data, onChange, onGenerate, defaultsLoading = fals
       >
         {defaultsLoading ? 'Preparing Invoice…' : 'Save & Generate Invoice'}
       </Button>
+
+      {showCustomerModal && (
+        <AddCustomerModal 
+          open={showCustomerModal}
+          onClose={() => setShowCustomerModal(false)}
+          onSaved={async (payload) => {
+            const { c } = await fetchMasters();
+            if (payload && payload.name) {
+              const newC = c.find(cust => cust.name === payload.name);
+              if (newC) {
+                onChange({
+                  ...data,
+                  customerId: newC.id,
+                  receiverName: newC.name,
+                  receiverAddress: newC.address,
+                  receiverState: newC.state,
+                  receiverStateCode: newC.stateCode,
+                  receiverGstin: newC.gstin,
+                  receiverRegion: newC.region || '',
+                  receiverPhone: newC.phone || '',
+                  receiverEmail: newC.email || '',
+                });
+              }
+            }
+          }}
+        />
+      )}
+
+      {showItemModal.isOpen && (
+        <AddItemModal 
+          open={showItemModal.isOpen}
+          onClose={() => setShowItemModal({ isOpen: false, rowId: null })}
+          onSaved={async (payload) => {
+            const { m } = await fetchMasters();
+            if (payload && payload.description && showItemModal.rowId) {
+              const newI = m.find(i => i.description === payload.description);
+              if (newI) {
+                const newItems = data.items.map(item => 
+                  item.id === showItemModal.rowId ? { 
+                    ...item, 
+                    description: newI.description,
+                    hsnCode: newI.hsnCode,
+                    unit: newI.unit,
+                    gstRate: newI.gstRate,
+                    isInclusive: newI.isInclusive ?? true
+                  } : item
+                );
+                onChange({ ...data, items: newItems });
+              }
+            }
+          }}
+        />
+      )}
+      
+      <div className="h-24 md:hidden no-print"></div>
     </div>
   );
 }

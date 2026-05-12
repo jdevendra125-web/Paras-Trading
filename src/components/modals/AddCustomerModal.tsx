@@ -34,7 +34,7 @@ const STATE_CODES: Record<string, string> = {
 interface Props {
   open: boolean;
   onClose: () => void;
-  onSaved: () => void;
+  onSaved: (payload?: any) => void;
   editing?: Customer | null;
 }
 
@@ -68,7 +68,7 @@ export function AddCustomerModal({ open, onClose, onSaved, editing }: Props) {
       const payload = { ...form, openingBalance: Number(form.openingBalance) || 0 };
       if (editing) { await updateCustomer(editing.id, payload); }
       else { await addCustomer(payload); }
-      onSaved(); onClose();
+      onSaved(payload); onClose();
     } catch (e: any) { setError(e.message || 'Failed to save'); }
     finally { setLoading(false); }
   };

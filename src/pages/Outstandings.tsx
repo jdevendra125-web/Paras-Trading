@@ -21,6 +21,9 @@ export function Outstandings() {
   const [payTarget, setPayTarget] = useState<any | null>(null);
   const [payForm, setPayForm] = useState({ amount: '', mode: 'Cash', date: todayISO() });
   const [saving, setSaving] = useState(false);
+  
+  const [search, setSearch] = useState('');
+  const [regionFilter, setRegionFilter] = useState('');
 
   const load = async () => {
     setLoading(true);
@@ -31,10 +34,14 @@ export function Outstandings() {
   useEffect(() => { load(); }, []);
 
   const customerMap = useMemo(() => Object.fromEntries(customers.map(c => [c.id, c])), [customers]);
+  const regions = useMemo(() => Array.from(new Set(customers.map(c => c.region || '').filter(Boolean))).sort(), [customers]);
 
   const outstandingData = useMemo(() => {
-    return customers.map(customer => {
-      const customerInvoices = invoices.filter(inv => inv.customerId === customer.id);
+    return customers
+      .filter(c => !regionFilter || c.region === regionFilter)
+      .filter(c => !search || c.name.toLowerCase().includes(search.toLowerCase()))
+      .map(customer => {
+        const customerInvoices = invoices.filter(inv => inv.customerId === customer.id);
       const customerTxns = transactions.filter(t => t.customerId === customer.id);
       
       const totalBilled = customerInvoices.reduce((s, inv) => s + (inv.totalAmount || 0), 0);
@@ -54,7 +61,7 @@ export function Outstandings() {
       };
     }).filter(d => d.outstanding > 0.01) // Filter out zero or negative balances
       .sort((a, b) => b.outstanding - a.outstanding);
-  }, [invoices, customers, transactions]);
+  }, [invoices, customers, transactions, search, regionFilter]);
 
   const totalOutstanding = useMemo(() => outstandingData.reduce((s, d) => s + d.outstanding, 0), [outstandingData]);
 
@@ -95,6 +102,21 @@ export function Outstandings() {
           </div>
         </motion.div>
       )}
+
+      <div className="grid grid-cols-2 gap-3 mb-4">
+        <Input 
+          label="" 
+          placeholder="Search customer..." 
+          value={search} 
+          onChange={e => setSearch(e.target.value)} 
+        />
+        <Select 
+          label="" 
+          value={regionFilter} 
+          onChange={e => setRegionFilter(e.target.value)} 
+          options={[{ value: '', label: 'All Regions' }, ...regions.map(r => ({ value: r, label: r }))]}
+        />
+      </div>
 
       {loading ? <TableSkeleton rows={5} /> : outstandingData.length === 0 ? (
         <div className="glass-card flex flex-col items-center py-14">

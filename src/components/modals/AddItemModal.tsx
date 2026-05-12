@@ -27,7 +27,7 @@ const GST_RATES = [
 interface Props {
   open: boolean;
   onClose: () => void;
-  onSaved: () => void;
+  onSaved: (payload?: any) => void;
   editing?: MasterItem | null;
 }
 
@@ -55,7 +55,7 @@ export function AddItemModal({ open, onClose, onSaved, editing }: Props) {
       const payload = { description: form.description, hsnCode: form.hsnCode, unit: form.unit, gstRate: Number(form.gstRate), isInclusive: form.isInclusive };
       if (editing) { await updateMasterItem(editing.id, payload); }
       else { await addMasterItem(payload); }
-      onSaved(); onClose();
+      onSaved(payload); onClose();
     } catch (e: any) { setError(e.message || 'Failed to save'); }
     finally { setLoading(false); }
   };

@@ -188,7 +188,7 @@ export const getCustomers = async (): Promise<Customer[]> => {
     phone: row.phone || '',
     email: row.email || '',
     openingBalance: row.opening_balance || 0
-  }));
+  })).sort((a, b) => a.name.localeCompare(b.name));
 };
 
 export const getMasterItems = async (): Promise<MasterItem[]> => {
