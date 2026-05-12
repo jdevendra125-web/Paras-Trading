@@ -9,6 +9,9 @@ import { formatCurrency, shareToWhatsApp } from '../../lib/utils';
 import type { InvoiceData, UserSettings } from '../../types';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import { Share } from '@capacitor/share';
+import { Filesystem, Directory } from '@capacitor/filesystem';
+import { Capacitor } from '@capacitor/core';
 
 interface Props { data: InvoiceData; onEdit?: () => void; }
 
@@ -104,17 +107,36 @@ export function InvoicePreviewPage({ data, onEdit }: Props) {
       const h = (canvas.height * w) / canvas.width;
       pdf.addImage(imgData, 'PNG', 0, 0, w, h);
       
-      const pdfBlob = pdf.output('blob');
-      const file = new File([pdfBlob], `${data.invoiceNo.replace(/\//g, '-')}.pdf`, { type: 'application/pdf' });
-      
-      if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        await navigator.share({
-          files: [file],
+      if (Capacitor.isNativePlatform()) {
+        const base64Data = pdf.output('datauristring').split(',')[1];
+        const fileName = `${data.invoiceNo.replace(/\//g, '-')}.pdf`;
+        
+        const result = await Filesystem.writeFile({
+          path: fileName,
+          data: base64Data,
+          directory: Directory.Cache
+        });
+        
+        await Share.share({
           title: `Invoice ${data.invoiceNo}`,
-          text: `Greetings from ${settings?.companyName || 'Registered'}.\n\nPlease find attached Invoice No: ${data.invoiceNo} for ${formatCurrency(total)}.`
+          text: `Greetings from ${settings?.companyName || 'Registered'}.\n\nPlease find attached Invoice No: ${data.invoiceNo} for ${formatCurrency(total)}.`,
+          url: result.uri,
+          dialogTitle: 'Share Invoice PDF'
         });
       } else {
-        handleWhatsApp();
+        // Web Fallback
+        const pdfBlob = pdf.output('blob');
+        const file = new File([pdfBlob], `${data.invoiceNo.replace(/\//g, '-')}.pdf`, { type: 'application/pdf' });
+        
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          await navigator.share({
+            files: [file],
+            title: `Invoice ${data.invoiceNo}`,
+            text: `Greetings from ${settings?.companyName || 'Registered'}.\n\nPlease find attached Invoice No: ${data.invoiceNo} for ${formatCurrency(total)}.`
+          });
+        } else {
+          handleWhatsApp();
+        }
       }
     } catch (err) {
       console.error('Error sharing PDF:', err);
