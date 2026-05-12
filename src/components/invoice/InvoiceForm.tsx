@@ -142,7 +142,7 @@ export function InvoiceForm({ data, onChange, onGenerate, defaultsLoading = fals
             <label className="input-label">Select Customer</label>
             <select className="input-field" value={data.customerId || ''} onChange={e => setCustomer(e.target.value)} style={{ backgroundImage: 'none' }}>
               <option value="" className="bg-bg-card">— Select Customer —</option>
-              <option value="ADD_NEW" className="bg-bg-card text-accent-blue font-bold">+ Add New Customer</option>
+              <option value="ADD_NEW" className="bg-bg-card text-accent-red font-bold">+ Add New Customer</option>
               {customers.map(c => <option key={c.id} value={c.id} className="bg-bg-card">{c.name}</option>)}
             </select>
           </div>
@@ -171,8 +171,8 @@ export function InvoiceForm({ data, onChange, onGenerate, defaultsLoading = fals
                   <label className="input-label">Description</label>
                   <select className="input-field text-sm" value={item.description} onChange={setItem(idx, 'description')} style={{ backgroundImage: 'none' }}>
                     <option value="" className="bg-bg-card">— Select item —</option>
-                    <option value="ADD_NEW" className="bg-bg-card text-accent-blue font-bold">+ Add New Item</option>
-                    {masterItems.map(m => <option key={m.id} value={m.description} className="bg-bg-card text-white">{m.description}</option>)}
+                    <option value="ADD_NEW" className="bg-bg-card text-accent-red font-bold">+ Add New Item</option>
+                    {masterItems.map(m => <option key={m.id} value={m.description} className="bg-bg-card">{m.description}</option>)}
                   </select>
                 </div>
                 <div className="grid grid-cols-3 gap-2">
