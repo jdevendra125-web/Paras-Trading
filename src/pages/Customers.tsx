@@ -70,7 +70,7 @@ export function Customers() {
                   <Link to={`/statement/${customer.id}`} className="w-7 h-7 rounded-lg bg-accent-blue/10 flex items-center justify-center text-accent-blue hover:bg-accent-blue/20 transition-colors">
                     <FileText size={13} />
                   </Link>
-                  <button onClick={() => { setEditing(customer); setShowAdd(true); }} className="w-7 h-7 rounded-lg bg-white/5 flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 transition-colors">
+                  <button onClick={() => { setEditing(customer); setShowAdd(true); }} className="w-7 h-7 rounded-lg bg-white/5 flex items-center justify-center text-slate-400 hover:text-content-primary hover:bg-white/10 transition-colors">
                     <Pencil size={13} />
                   </button>
                   <button onClick={() => setDeleteTarget(customer.id)} className="w-7 h-7 rounded-lg bg-neon-red/10 flex items-center justify-center text-neon-red hover:bg-neon-red/20 transition-colors">

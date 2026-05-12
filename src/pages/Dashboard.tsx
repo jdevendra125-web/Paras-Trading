@@ -189,7 +189,7 @@ export function Dashboard() {
                   className="bg-bg-card border border-content-primary/5 rounded-[1.8rem] p-4 lg:p-5 flex items-center lg:items-start gap-3 lg:gap-4 hover:border-accent-red/20 transition-all duration-300 group h-full shadow-lg overflow-hidden"
                 >
                   <div className={`w-10 h-10 lg:w-12 lg:h-12 rounded-[1rem] lg:rounded-2xl bg-gradient-to-br ${color} flex items-center justify-center ${glow} flex-shrink-0 group-hover:rotate-6 transition-transform`}>
-                    <Icon size={18} className="text-white lg:size-[22px]" />
+                    <Icon size={18} className="text-content-primary lg:size-[22px]" />
                   </div>
                   <div className="min-w-0">
                     <p className="text-sm lg:text-base font-bold text-content-primary truncate">{label}</p>

@@ -21,7 +21,7 @@ export function Masters() {
                 <opt.icon size={22} className={opt.color} />
               </div>
               <div>
-                <p className="text-base font-bold text-white">{opt.label}</p>
+                <p className="text-base font-bold text-content-primary">{opt.label}</p>
                 <p className="text-xs text-slate-500 mt-0.5">{opt.subtitle}</p>
               </div>
             </Link>

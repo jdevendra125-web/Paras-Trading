@@ -44,10 +44,10 @@ export function Modal({ open, onClose, title, children, size = 'md', footer }: M
             >
               {title && (
                 <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-white/[0.06] flex-shrink-0">
-                  <h2 className="text-base font-bold text-white">{title}</h2>
+                  <h2 className="text-base font-bold text-content-primary">{title}</h2>
                   <button
                     onClick={onClose}
-                    className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
+                    className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-content-primary hover:bg-white/10 transition-colors"
                   >
                     <X size={16} />
                   </button>

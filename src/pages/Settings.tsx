@@ -38,7 +38,7 @@ export function Settings() {
     <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="glass-card p-5 mb-4">
       <div className="flex items-center gap-2 mb-4 pb-3 border-b border-white/[0.06]">
         <div className="w-7 h-7 rounded-lg bg-accent-blue/10 flex items-center justify-center"><Icon size={14} className="text-accent-blue" /></div>
-        <p className="text-sm font-bold text-white">{title}</p>
+        <p className="text-sm font-bold text-content-primary">{title}</p>
       </div>
       <div className="space-y-3">{children}</div>
     </motion.div>

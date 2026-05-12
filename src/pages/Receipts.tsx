@@ -169,7 +169,7 @@ export function Receipts() {
                 >
                   <Download size={12} />
                 </button>
-                <button onClick={() => openEdit(t)} className="w-7 h-7 rounded-lg bg-white/5 flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10"><Pencil size={12} /></button>
+                <button onClick={() => openEdit(t)} className="w-7 h-7 rounded-lg bg-white/5 flex items-center justify-center text-slate-400 hover:text-content-primary hover:bg-white/10"><Pencil size={12} /></button>
                 <button onClick={() => setDeleteTarget(t.id)} className="w-7 h-7 rounded-lg bg-neon-red/10 flex items-center justify-center text-neon-red hover:bg-neon-red/20"><Trash2 size={12} /></button>
               </div>
             </div>

@@ -167,7 +167,7 @@ export function Help() {
           </p>
           <button 
             onClick={handleContactSupport}
-            className="font-bold py-2.5 px-6 rounded shadow-sm text-white transition-opacity hover:opacity-90"
+            className="font-bold py-2.5 px-6 rounded shadow-sm text-content-primary transition-opacity hover:opacity-90"
             style={{ 
               backgroundColor: '#c81e35',
               backgroundImage: 'linear-gradient(to right, #d92138, #b81b2f)'

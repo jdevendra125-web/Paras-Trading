@@ -45,11 +45,11 @@ export function Items() {
                 <Tag size={15} className="text-accent-violet" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-white truncate">{item.description}</p>
+                <p className="text-sm font-semibold text-content-primary truncate">{item.description}</p>
                 <p className="text-xs text-slate-500">HSN: {item.hsnCode} · {item.unit} · GST {item.gstRate}%</p>
               </div>
               <div className="flex gap-1.5">
-                <button onClick={() => { setEditing(item); setShowAdd(true); }} className="w-7 h-7 rounded-lg bg-white/5 flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 transition-colors"><Pencil size={12} /></button>
+                <button onClick={() => { setEditing(item); setShowAdd(true); }} className="w-7 h-7 rounded-lg bg-white/5 flex items-center justify-center text-slate-400 hover:text-content-primary hover:bg-white/10 transition-colors"><Pencil size={12} /></button>
                 <button onClick={() => setDeleteTarget(item.id)} className="w-7 h-7 rounded-lg bg-neon-red/10 flex items-center justify-center text-neon-red hover:bg-neon-red/20 transition-colors"><Trash2 size={12} /></button>
               </div>
             </motion.div>

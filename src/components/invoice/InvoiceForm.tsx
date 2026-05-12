@@ -136,7 +136,7 @@ export function InvoiceForm({ data, onChange, onGenerate, defaultsLoading = fals
 
       {/* Customer */}
       <div className="glass-card p-4 mb-3">
-        <p className="text-sm font-bold text-white mb-3">Receiver / Customer</p>
+        <p className="text-sm font-bold text-content-primary mb-3">Receiver / Customer</p>
         {customers.length > 0 && (
           <div className="mb-3">
             <label className="input-label">Select Customer</label>
@@ -152,7 +152,7 @@ export function InvoiceForm({ data, onChange, onGenerate, defaultsLoading = fals
       {/* Items */}
       <div className="glass-card p-4 mb-3">
         <div className="flex items-center justify-between mb-3">
-          <p className="text-sm font-bold text-white">Items</p>
+          <p className="text-sm font-bold text-content-primary">Items</p>
           <button onClick={addItem} className="btn-ghost text-accent-blue text-xs px-2 py-1"><Plus size={13} /> Add Row</button>
         </div>
         <div className="space-y-4">
@@ -204,7 +204,7 @@ export function InvoiceForm({ data, onChange, onGenerate, defaultsLoading = fals
 
       {/* Transport (collapsible) */}
       <div className="glass-card mb-3">
-        <button onClick={() => setShowTransport(!showTransport)} className="w-full flex items-center justify-between px-4 py-3.5 text-sm font-semibold text-white">
+        <button onClick={() => setShowTransport(!showTransport)} className="w-full flex items-center justify-between px-4 py-3.5 text-sm font-semibold text-content-primary">
           Transport Details {showTransport ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
         </button>
         <AnimatePresence>

@@ -122,7 +122,7 @@ export function CustomerOutstandingBills() {
               className={`flex items-center justify-between px-4 py-3.5 ${i < billsWithOutstanding.length - 1 ? 'border-b border-white/[0.04]' : ''}`}
             >
               <div>
-                <p className="text-sm font-semibold text-white">{b.invoiceNo}</p>
+                <p className="text-sm font-semibold text-content-primary">{b.invoiceNo}</p>
                 <p className="text-xs text-slate-500 mt-0.5">{formatDateShort(b.dateOfSupply)} · Billed: {formatCurrency(b.totalAmount || 0)}</p>
               </div>
               <div className="text-right">

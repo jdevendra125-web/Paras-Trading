@@ -377,7 +377,7 @@ export function BankImport() {
                     <Upload size={32} className="text-accent-red" />
                   </div>
                   <div className="text-center">
-                    <h3 className="text-lg font-bold text-white mb-2">Auto-Import File</h3>
+                    <h3 className="text-lg font-bold text-content-primary mb-2">Auto-Import File</h3>
                     <p className="text-[10px] text-slate-500 max-w-xs uppercase tracking-widest font-bold">PDF, XLSX, CSV</p>
                   </div>
                   {fileName && !error && (
@@ -395,7 +395,7 @@ export function BankImport() {
                     <FileSpreadsheet size={32} className="text-accent-gold" />
                   </div>
                   <div className="text-center">
-                    <h3 className="text-lg font-bold text-white mb-2">Paste Text Manually</h3>
+                    <h3 className="text-lg font-bold text-content-primary mb-2">Paste Text Manually</h3>
                     <p className="text-[10px] text-slate-500 max-w-xs uppercase tracking-widest font-bold">Copy from PDF & Paste</p>
                   </div>
                 </div>
@@ -415,7 +415,7 @@ export function BankImport() {
                 {showManualPaste && (
                   <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="w-full mt-6">
                     <div className="glass-card p-6 border-accent-gold/20">
-                      <p className="text-xs font-bold text-white mb-3">Paste your transaction lines here:</p>
+                      <p className="text-xs font-bold text-content-primary mb-3">Paste your transaction lines here:</p>
                       <textarea 
                         className="input-field min-h-[200px] text-[11px] font-mono p-4 mb-4"
                         placeholder="01/01/2025  UPI-987654321-RAHUL  500.00&#10;02/01/2025  CASH DEP  1000.00"
@@ -435,7 +435,7 @@ export function BankImport() {
                 <Select label="Destination Bank Account" value={accountId} onChange={e => setAccountId(e.target.value)} options={accounts.map(a => ({ value: a.id, label: a.name }))} />
                 <div className="p-4 bg-bg-card rounded-2xl border border-white/5">
                   <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Total Parties Linked</p>
-                  <p className="text-xl font-bold text-white">{customers.length}</p>
+                  <p className="text-xl font-bold text-content-primary">{customers.length}</p>
                 </div>
               </div>
             </motion.div>
@@ -447,7 +447,7 @@ export function BankImport() {
                 <div className="flex items-center gap-4 mb-8">
                   <div className="w-12 h-12 rounded-2xl bg-accent-gold/10 flex items-center justify-center"><Zap size={24} className="text-accent-gold" /></div>
                   <div>
-                    <h3 className="text-lg font-bold text-white">Mapping Columns</h3>
+                    <h3 className="text-lg font-bold text-content-primary">Mapping Columns</h3>
                     <p className="text-xs text-slate-500">Mapping data from {fileName}</p>
                   </div>
                 </div>
@@ -482,7 +482,7 @@ export function BankImport() {
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="max-w-md mx-auto py-20 text-center">
               <div className="glass-card p-10">
                 <AlertCircle size={40} className="text-accent-red mx-auto mb-4" />
-                <h3 className="text-lg font-bold text-white mb-2">No Transactions Found</h3>
+                <h3 className="text-lg font-bold text-content-primary mb-2">No Transactions Found</h3>
                 <p className="text-sm text-slate-500 mb-6">The analysis finished but no rows were processed. Please try re-mapping your columns.</p>
                 <Button className="w-full" onClick={() => setStep('analysis')}>Go Back to Mapping</Button>
               </div>
@@ -494,7 +494,7 @@ export function BankImport() {
               {/* Sidebar: Stats & Filters */}
               <div className="lg:col-span-1 space-y-6">
                 <div className="glass-card p-5">
-                  <h3 className="text-sm font-bold text-white mb-4">Statement Summary</h3>
+                  <h3 className="text-sm font-bold text-content-primary mb-4">Statement Summary</h3>
                   <div className="space-y-4">
                     <StatRow label="Total Items" value={stats.total} />
                     <StatRow label="Pending" value={stats.pending} />
@@ -510,7 +510,7 @@ export function BankImport() {
                 </div>
 
                 <div className="glass-card p-5">
-                  <h3 className="text-sm font-bold text-white mb-4">View Filters</h3>
+                  <h3 className="text-sm font-bold text-content-primary mb-4">View Filters</h3>
                   <div className="space-y-3">
                     <div className="relative">
                       <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
@@ -564,7 +564,7 @@ export function BankImport() {
                 <div className="w-20 h-20 rounded-full bg-success/10 border border-success/20 flex items-center justify-center mx-auto mb-6">
                   <CheckCircle size={40} className="text-success" />
                 </div>
-                <h3 className="text-2xl font-bold text-white mb-2">Import Successful!</h3>
+                <h3 className="text-2xl font-bold text-content-primary mb-2">Import Successful!</h3>
                 <p className="text-sm text-slate-500 mb-8">{importedCount} transactions have been finalized and recorded in the customer ledgers.</p>
                 <div className="space-y-3">
                   <Button className="w-full" onClick={() => { setStep('upload'); setTransactions([]); }}>Import New Statement</Button>
@@ -602,7 +602,7 @@ function TransactionRow({ txn, customers, active, onClick, onLink, onFlag, last 
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <p className="text-sm font-bold text-white truncate">{txn.particulars}</p>
+            <p className="text-sm font-bold text-content-primary truncate">{txn.particulars}</p>
             {txn.status === 'reconciled' && <ShieldCheck size={12} className="text-success" />}
             {txn.status === 'flagged' && <Flag size={12} className="text-accent-red" />}
           </div>
@@ -687,13 +687,13 @@ function HistoryTab({ history, accounts }: any) {
                 </div>
                 <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{session.date}</p>
               </div>
-              <h4 className="text-sm font-bold text-white mb-1 truncate">{session.fileName}</h4>
+              <h4 className="text-sm font-bold text-content-primary mb-1 truncate">{session.fileName}</h4>
               <p className="text-[10px] font-bold text-accent-red mb-4 uppercase tracking-wider">{getBankName(session.bankAccountId)}</p>
               
               <div className="grid grid-cols-2 gap-4 py-3 border-t border-white/5">
                 <div>
                   <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Total Rows</p>
-                  <p className="text-sm font-black text-white">{session.totalTransactions}</p>
+                  <p className="text-sm font-black text-content-primary">{session.totalTransactions}</p>
                 </div>
                 <div>
                   <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Linked</p>
@@ -788,7 +788,7 @@ function AnalyticsTab({ transactions, customers }: any) {
               <div key={name} className="flex justify-between items-center">
                 <div className="flex items-center gap-2">
                   <div className="w-6 h-6 rounded-lg bg-white/5 flex items-center justify-center text-[10px] font-bold text-slate-400">{name[0]}</div>
-                  <p className="text-[11px] font-bold text-white truncate w-24">{name}</p>
+                  <p className="text-[11px] font-bold text-content-primary truncate w-24">{name}</p>
                 </div>
                 <p className="text-[11px] font-black text-success">{formatCurrency(amt)}</p>
               </div>
@@ -815,7 +815,7 @@ function AnalyticsTab({ transactions, customers }: any) {
       <div className="glass-card p-6">
         <div className="flex items-center gap-3 mb-6">
           <TrendingUp size={20} className="text-accent-red" />
-          <h3 className="text-lg font-bold text-white">Smart Reconciliation Logic</h3>
+          <h3 className="text-lg font-bold text-content-primary">Smart Reconciliation Logic</h3>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div className="space-y-4">
@@ -836,7 +836,7 @@ function InsightCard({ title, subtitle, children }: any) {
   return (
     <div className="glass-card p-5">
       <div className="mb-4">
-        <h3 className="text-sm font-bold text-white">{title}</h3>
+        <h3 className="text-sm font-bold text-content-primary">{title}</h3>
         <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{subtitle}</p>
       </div>
       {children}

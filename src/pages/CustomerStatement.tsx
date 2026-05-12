@@ -92,7 +92,7 @@ export function CustomerStatement() {
           {entries.map((e, i) => (
             <div key={i} className={`grid grid-cols-4 px-4 py-2.5 items-center ${i < entries.length - 1 ? 'border-b border-white/[0.04]' : ''}`}>
               <p className="text-xs text-slate-500">{formatDateShort(e.date)}</p>
-              <p className="text-xs text-white truncate pr-2 col-span-1">{e.description}</p>
+              <p className="text-xs text-content-primary truncate pr-2 col-span-1">{e.description}</p>
               <p className="text-xs amount text-neon-red">{e.debit > 0 ? formatCurrency(e.debit) : '-'}</p>
               <p className="text-xs amount text-neon-green">{e.credit > 0 ? formatCurrency(e.credit) : '-'}</p>
             </div>

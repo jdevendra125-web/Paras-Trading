@@ -55,7 +55,7 @@ export function More() {
           {(settings?.companyName?.[0] || 'T').toUpperCase()}
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-bold text-white truncate">{businessName}</p>
+          <p className="text-sm font-bold text-content-primary truncate">{businessName}</p>
           <p className="text-xs text-slate-500 truncate">{ownerName}</p>
         </div>
       </motion.div>
@@ -71,7 +71,7 @@ export function More() {
                   <div className={`w-8 h-8 rounded-xl ${item.bg} flex items-center justify-center flex-shrink-0`}>
                     <item.icon size={15} className={item.color} />
                   </div>
-                  <p className="text-sm text-white flex-1">{item.label}</p>
+                  <p className="text-sm text-content-primary flex-1">{item.label}</p>
                   <ChevronRight size={14} className="text-slate-600" />
                 </Link>
               ))}

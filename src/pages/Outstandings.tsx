@@ -177,7 +177,7 @@ export function Outstandings() {
             <motion.div key={i} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }} className="glass-card-hover p-4">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-white truncate">{d.customer?.name || 'Unknown Customer'}</p>
+                  <p className="text-sm font-semibold text-content-primary truncate">{d.customer?.name || 'Unknown Customer'}</p>
                   <p className="text-xs text-slate-500 mt-0.5">{d.invoices.length} invoice{d.invoices.length > 1 ? 's' : ''} · Billed: {formatCurrency(d.total)}</p>
                   <p className="text-xs text-slate-500">Paid: <span className="text-neon-green">{formatCurrency(d.paid)}</span></p>
                 </div>
@@ -194,7 +194,7 @@ export function Outstandings() {
                       <CheckCircle size={10} /> Mark Paid
                     </button>
                     {d.customer && (
-                      <Link to={`/outstanding-bills/${d.customer.id}`} className="text-xs text-slate-600 flex items-center gap-0.5 hover:text-white transition-colors">
+                      <Link to={`/outstanding-bills/${d.customer.id}`} className="text-xs text-slate-600 flex items-center gap-0.5 hover:text-content-primary transition-colors">
                         View <ArrowUpRight size={11} />
                       </Link>
                     )}
