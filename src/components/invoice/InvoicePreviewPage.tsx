@@ -5,7 +5,7 @@ import { Printer, Download, Pencil, Share2, CheckCircle } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
 import { getSettings, calculateInvoiceTotal } from '../../lib/storage';
 import { numberToWords } from '../../lib/numberToWords';
-import { formatCurrency, shareToWhatsApp } from '../../lib/utils';
+import { formatCurrency } from '../../lib/utils';
 import type { InvoiceData, UserSettings } from '../../types';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
