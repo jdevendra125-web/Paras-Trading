@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Printer, Download, Pencil, Share2, CheckCircle } from 'lucide-react';
 import { Button } from '../../components/ui/Button';
+import { Modal } from '../../components/ui/Modal';
 import { getSettings, calculateInvoiceTotal } from '../../lib/storage';
 import { numberToWords } from '../../lib/numberToWords';
 import { formatCurrency, shareToWhatsApp } from '../../lib/utils';
@@ -18,6 +19,7 @@ interface Props { data: InvoiceData; onEdit?: () => void; }
 export function InvoicePreviewPage({ data, onEdit }: Props) {
   const [settings, setSettings] = useState<UserSettings | null>(null);
   const [downloading, setDownloading] = useState(false);
+  const [shareReadyFile, setShareReadyFile] = useState<File | null>(null);
   const printRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
 
@@ -124,27 +126,12 @@ export function InvoicePreviewPage({ data, onEdit }: Props) {
           dialogTitle: 'Share Invoice PDF'
         });
       } else {
-        // Web Fallback
+        // Web Fallback: Because generating the PDF takes too long and causes the browser's "user gesture" to expire,
+        // we must temporarily hold the file and ask the user to click "Share Now" to create a fresh user gesture!
         const pdfBlob = pdf.output('blob');
         const file = new File([pdfBlob], `${data.invoiceNo.replace(/\//g, '-')}.pdf`, { type: 'application/pdf' });
-        
-        if (navigator.share) {
-          try {
-            await navigator.share({
-              files: [file],
-              title: `Invoice ${data.invoiceNo}`,
-              text: `Greetings from ${settings?.companyName || 'Registered'}.\n\nPlease find attached Invoice No: ${data.invoiceNo} for ${formatCurrency(total)}.`
-            });
-            } catch (shareErr: any) {
-              if (shareErr.name === 'AbortError' || (shareErr.message && shareErr.message.toLowerCase().includes('cancel'))) {
-                return; // User cancelled
-              }
-              alert(`Share failed: ${shareErr.message || 'Device unsupported'}`);
-            }
-          } else {
-            alert('Web Share API is not supported on this browser.');
-          }
-        }
+        setShareReadyFile(file);
+      }
       } catch (err: any) {
         console.error('Error sharing PDF:', err);
         if (err.name === 'AbortError' || (err.message && err.message.toLowerCase().includes('cancel'))) {
@@ -356,6 +343,36 @@ export function InvoicePreviewPage({ data, onEdit }: Props) {
       </div>
       </div>
       </div>
+
+      {/* Share Web Fallback Modal */}
+      <Modal open={!!shareReadyFile} onClose={() => setShareReadyFile(null)} title="Share Invoice">
+        <div className="flex flex-col items-center py-6 text-center">
+          <CheckCircle size={48} className="text-[#25D366] mb-4" />
+          <h3 className="text-lg font-bold text-gray-800 mb-2">PDF Generated Successfully!</h3>
+          <p className="text-sm text-gray-500 mb-6">Your invoice is ready to be shared.</p>
+          <div className="flex gap-3 w-full">
+            <button onClick={() => setShareReadyFile(null)} className="btn-secondary flex-1">Cancel</button>
+            <button 
+              onClick={() => {
+                if (shareReadyFile && navigator.share) {
+                  navigator.share({
+                    files: [shareReadyFile],
+                    title: `Invoice ${data.invoiceNo}`,
+                    text: `Greetings from ${settings?.companyName || 'Registered'}.\n\nPlease find attached Invoice No: ${data.invoiceNo} for ${formatCurrency(total)}.`
+                  }).catch(() => {});
+                } else {
+                  alert("Web Share is not supported on this browser.");
+                }
+                setShareReadyFile(null);
+              }} 
+              className="btn-primary flex-1 bg-[#25D366] hover:bg-[#1ebe5d] border-none text-white shadow-lg shadow-[#25D366]/20"
+            >
+              Share Now
+            </button>
+          </div>
+        </div>
+      </Modal>
+
     </div>
   );
 }
