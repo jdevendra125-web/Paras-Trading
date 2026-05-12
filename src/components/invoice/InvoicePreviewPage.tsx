@@ -52,7 +52,7 @@ export function InvoicePreviewPage({ data, onEdit }: Props) {
   const capturePDF = async () => {
     if (!printRef.current) return null;
     return await html2canvas(printRef.current, {
-      scale: 5, // ~600 DPI quality
+      scale: 2.5, // Reduced from 5 to prevent Chrome 1s gesture timeout
       backgroundColor: '#fff',
       useCORS: true,
       windowWidth: 1024,
@@ -128,19 +128,37 @@ export function InvoicePreviewPage({ data, onEdit }: Props) {
         const pdfBlob = pdf.output('blob');
         const file = new File([pdfBlob], `${data.invoiceNo.replace(/\//g, '-')}.pdf`, { type: 'application/pdf' });
         
-        if (navigator.canShare && navigator.canShare({ files: [file] })) {
-          await navigator.share({
-            files: [file],
-            title: `Invoice ${data.invoiceNo}`,
-            text: `Greetings from ${settings?.companyName || 'Registered'}.\n\nPlease find attached Invoice No: ${data.invoiceNo} for ${formatCurrency(total)}.`
-          });
-        } else {
-          handleWhatsApp();
+        if (navigator.share) {
+          try {
+            if (navigator.canShare && navigator.canShare({ files: [file] })) {
+              await navigator.share({
+                files: [file],
+                title: `Invoice ${data.invoiceNo}`,
+                text: `Greetings from ${settings?.companyName || 'Registered'}.\n\nPlease find attached Invoice No: ${data.invoiceNo} for ${formatCurrency(total)}.`
+              });
+            } else {
+              // Fallback to sharing just text and URL if files are not supported
+              await navigator.share({
+                title: `Invoice ${data.invoiceNo}`,
+                text: `Greetings from ${settings?.companyName || 'Registered'}.\n\nInvoice No: ${data.invoiceNo} for ${formatCurrency(total)}.`,
+                url: window.location.href
+              });
+            }
+          } catch (e: any) {
+            console.error('Error in Web Share:', e);
+            if (e.name === 'NotAllowedError' || e.message?.toLowerCase().includes('user gesture')) {
+              // If it still timed out, trigger text-only share as a last resort since it doesn't need file validation
+              await navigator.share({
+                title: `Invoice ${data.invoiceNo}`,
+                text: `Greetings from ${settings?.companyName || 'Registered'}.\n\nInvoice No: ${data.invoiceNo} for ${formatCurrency(total)}.`,
+                url: window.location.href
+              }).catch(() => {});
+            }
+          }
         }
       }
     } catch (err) {
-      console.error('Error sharing PDF:', err);
-      handleWhatsApp();
+      console.error('Error generating PDF:', err);
     } finally { 
       setDownloading(false); 
     }
