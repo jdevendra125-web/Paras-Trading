@@ -41,11 +41,11 @@ export function Help() {
       <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="glass-card p-5">
         <p className="text-sm font-bold text-content-primary mb-3">Contact Support</p>
         <div className="space-y-2">
-          <a href="tel:+919876543210" className="flex items-center gap-3 text-sm text-slate-400 hover:text-content-primary transition-colors">
-            <Phone size={14} className="text-accent-blue" /> +91 98765 43210
+          <a href="tel:+918484009350" className="flex items-center gap-3 text-sm text-slate-400 hover:text-content-primary transition-colors">
+            <Phone size={14} className="text-accent-blue" /> +91 8484009350
           </a>
-          <a href="mailto:support@parastrading.com" className="flex items-center gap-3 text-sm text-slate-400 hover:text-content-primary transition-colors">
-            <Mail size={14} className="text-accent-blue" /> support@parastrading.com
+          <a href="mailto:jdevendra6509@gmail.com" className="flex items-center gap-3 text-sm text-slate-400 hover:text-content-primary transition-colors">
+            <Mail size={14} className="text-accent-blue" /> jdevendra6509@gmail.com
           </a>
         </div>
       </motion.div>
