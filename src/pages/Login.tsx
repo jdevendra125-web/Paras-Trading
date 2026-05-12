@@ -101,10 +101,7 @@ export function Login() {
       {/* Fixed Header */}
       <header className="h-14 sm:h-16 flex items-center justify-between px-4 sm:px-6 bg-bg-secondary/80 backdrop-blur-xl border-b border-content-primary/5 z-50 flex-shrink-0">
         <div className="flex items-center gap-2">
-          <div className="w-7 h-8 sm:w-8 sm:h-10 rounded-lg bg-gradient-to-br from-accent-red to-accent-crimson flex items-center justify-center shadow-glow-red text-white">
-            <Book size={16} />
-          </div>
-          <span className="font-bold text-sm sm:text-base tracking-tight text-content-primary">Digital <span className="text-accent-red">Laal Vahi</span></span>
+          <img src="/logo.png" alt="Digital LaalVahi" className="h-8 sm:h-10 object-contain" />
         </div>
       </header>
 
@@ -118,8 +115,7 @@ export function Login() {
             animate={{ opacity: 1, scale: 1 }}
             className="flex flex-col items-center mb-4 sm:mb-6 text-center hidden min-[400px]:flex"
           >
-            <h1 className="text-2xl sm:text-3xl font-bold font-display text-content-primary tracking-tight">Digital <span className="text-accent-red">Laal Vahi</span></h1>
-            <p className="text-[10px] sm:text-xs text-accent-gold font-bold uppercase tracking-widest mt-1">Smart Business Book</p>
+            <img src="/logo.png" alt="Digital LaalVahi" className="h-24 sm:h-32 object-contain" />
           </motion.div>
 
           {/* Dynamic Form Card */}
@@ -228,7 +224,7 @@ export function Login() {
           <button onClick={() => setShowFAQ(true)} className="text-[10px] font-bold text-content-muted uppercase tracking-[0.2em] hover:text-accent-red transition-colors">FAQ</button>
           <button onClick={() => setShowContact(true)} className="text-[10px] font-bold text-content-muted uppercase tracking-[0.2em] hover:text-accent-red transition-colors">Contact</button>
         </div>
-        <p className="text-[9px] font-bold text-content-muted uppercase tracking-[0.2em]">© 2026 Paras Trading Co.</p>
+        <p className="text-[9px] font-bold text-content-muted uppercase tracking-[0.2em]">© 2026 Registered</p>
       </footer>
 
       {/* Popups */}
@@ -267,7 +263,7 @@ export function Login() {
                    <Mail className="text-accent-red" size={20} />
                    <div>
                      <p className="text-[10px] font-bold text-content-muted uppercase tracking-widest">Email Address</p>
-                     <p className="text-sm font-bold text-content-primary">support@parastrading.com</p>
+                     <p className="text-sm font-bold text-content-primary">support@registered.com</p>
                    </div>
                  </div>
                  <div className="flex items-center gap-4 p-4 rounded-2xl bg-bg-secondary/50 border border-content-primary/5">

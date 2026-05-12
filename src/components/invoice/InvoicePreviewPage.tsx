@@ -91,7 +91,7 @@ export function InvoicePreviewPage({ data, onEdit }: Props) {
           <div className="flex justify-between items-start">
             <div className="flex-1">
               <h1 className="text-3xl font-black text-[#B91C1C] tracking-tight uppercase leading-none mb-2">
-                {settings?.companyName || 'PARAS TRADING CO.'}
+                {settings?.companyName || 'REGISTERED'}
               </h1>
               <p className="text-sm font-bold text-gray-700 mb-4">
                 Proprietor: {settings?.proprietorName || 'Parasmal Jethmal Jain'}
@@ -255,7 +255,7 @@ export function InvoicePreviewPage({ data, onEdit }: Props) {
         <div className="px-8 py-10 flex justify-between items-end">
           <p className="text-[10px] text-gray-300 font-medium">This is a computer-generated invoice</p>
           <div className="text-right">
-            <p className="text-sm font-black text-gray-800 uppercase tracking-tighter">FOR {settings?.companyName || 'PARAS TRADING CO.'}</p>
+            <p className="text-sm font-black text-gray-800 uppercase tracking-tighter">FOR {settings?.companyName || 'REGISTERED'}</p>
             <div className="h-16" />
             <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Authorised Signatory</p>
           </div>
