@@ -41,13 +41,41 @@ export function Receipts() {
   const openEdit = (t: Transaction) => { setEditing(t); setForm({ date: t.date, amount: String(t.amount), type: t.type, mode: t.mode, bankAccountId: t.bankAccountId || '', customerId: t.customerId || '', particulars: t.particulars || '', refNo: t.refNo || '' }); setShowForm(true); };
 
   const handleSave = async () => {
-    if (!form.amount || !form.particulars) return;
+    if (!form.amount) {
+      alert('Please enter an amount.');
+      return;
+    }
+    if (form.mode === 'Bank' && !form.bankAccountId) {
+      alert('Please select a Bank Account.');
+      return;
+    }
+    
+    let finalParticulars = form.particulars;
+    if (!finalParticulars) {
+      const partyName = form.customerId ? customers.find(c => c.id === form.customerId)?.name : '';
+      if (partyName) {
+        finalParticulars = form.type === 'CR' ? `Receipt from ${partyName}` : `Payment to ${partyName}`;
+      } else {
+        finalParticulars = form.type === 'CR' ? 'Cash Receipt' : 'Cash Payment';
+      }
+    }
+
     setSaving(true);
     try {
-      const payload = { date: form.date, amount: Number(form.amount), type: form.type as 'CR' | 'DR', mode: form.mode as 'Bank' | 'Cash', bankAccountId: form.bankAccountId || undefined, customerId: form.customerId || undefined, particulars: form.particulars, refNo: form.refNo || undefined };
+      const payload = { 
+        date: form.date, 
+        amount: Number(form.amount), 
+        type: form.type as 'CR' | 'DR', 
+        mode: form.mode as 'Bank' | 'Cash', 
+        bankAccountId: form.bankAccountId || undefined, 
+        customerId: form.customerId || undefined, 
+        particulars: finalParticulars, 
+        refNo: form.refNo || undefined 
+      };
       if (editing) await updateTransaction(editing.id, payload);
       else await addTransaction(payload);
-      await load(); setShowForm(false);
+      await load(); 
+      setShowForm(false);
     } catch (e: any) { alert(e.message); }
     finally { setSaving(false); }
   };

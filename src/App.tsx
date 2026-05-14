@@ -53,6 +53,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 // ─── New Invoice Wrapper (Bug 11 fix: disable save until defaults load) ───────
 function NewInvoiceWrapper() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [defaultsLoaded, setDefaultsLoaded] = useState(false);
   const [invoiceData, setInvoiceData] = useState<InvoiceData>({
     invoiceNo: '...',   // placeholder until fetchDefaults resolves
@@ -76,16 +77,20 @@ function NewInvoiceWrapper() {
         const num = parseInt(numStr, 10);
         if (!isNaN(num)) nextNo = `${prefix}${String(num + 1).padStart(3, '0')}`;
       }
+      
+      const prefill = location.state?.prefill;
+      
       setInvoiceData(prev => ({
         ...prev, 
+        ...prefill,
         invoiceNo: nextNo,
         invoiceType: (userSettings?.invoiceFormat as any) || 'goods',
-        items: [{ id: crypto.randomUUID(), description: mostSelling?.description || 'Jaggery', hsnCode: mostSelling?.hsnCode || '17011410', qty: '', unit: mostSelling?.unit || 'Kgs', inclusiveRate: '', gstRate: mostSelling?.gstRate || 0, isInclusive: true }],
+        items: prefill?.items?.length ? prefill.items : [{ id: crypto.randomUUID(), description: mostSelling?.description || 'Jaggery', hsnCode: mostSelling?.hsnCode || '17011410', qty: '', unit: mostSelling?.unit || 'Kgs', inclusiveRate: '', gstRate: mostSelling?.gstRate || 0, isInclusive: true }],
       }));
       setDefaultsLoaded(true);
     }
     fetchDefaults();
-  }, []);
+  }, [location.state]);
 
   const handleGenerate = async () => {
     await saveInvoice(invoiceData);

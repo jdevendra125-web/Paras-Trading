@@ -1,10 +1,11 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Search, FileText, Trash2, Eye, TrendingUp } from 'lucide-react';
+import { Plus, Search, FileText, Trash2, Eye, TrendingUp, Sparkles } from 'lucide-react';
 import { PageHeader } from '../components/layout/PageHeader';
 import { TableSkeleton } from '../components/ui/Skeleton';
 import { ConfirmDialog } from '../components/ui/Modal';
+import { AIAssistantModal } from '../components/ui/AIAssistantModal';
 import { getInvoices, deleteInvoice } from '../lib/storage';
 import { formatCurrency, formatDateShort } from '../lib/utils';
 import type { InvoiceData } from '../types';
@@ -16,6 +17,7 @@ export function Invoices() {
   const [search, setSearch] = useState('');
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [showAIModal, setShowAIModal] = useState(false);
 
   const load = async () => { setLoading(true); setInvoices(await getInvoices()); setLoading(false); };
   useEffect(() => { load(); }, []);
@@ -34,12 +36,23 @@ export function Invoices() {
     finally { setDeleting(false); setDeleteTarget(null); }
   };
 
+  const handleAIResult = (data: Partial<InvoiceData>) => {
+    navigate('/new', { state: { prefill: data } });
+  };
+
   const totalAmount = useMemo(() => filtered.reduce((s, i) => s + (i.totalAmount || 0), 0), [filtered]);
 
   return (
     <div className="page-container flex flex-col h-full overflow-hidden">
       <PageHeader title="Invoices" subtitle={`${invoices.length} invoices`} icon={<FileText size={18} />}
-        action={<Link to="/new" className="btn-primary text-xs px-3 py-2"><Plus size={14} /> New</Link>}
+        action={
+          <div className="flex gap-2">
+            <button onClick={() => setShowAIModal(true)} className="btn-secondary text-xs px-3 py-2 flex items-center gap-1.5 border border-accent-blue/20 text-accent-blue hover:bg-accent-blue/10 bg-accent-blue/5">
+              <Sparkles size={14} /> AI Build
+            </button>
+            <Link to="/new" className="btn-primary text-xs px-3 py-2 flex items-center gap-1.5"><Plus size={14} /> New</Link>
+          </div>
+        }
       />
       {!loading && invoices.length > 0 && (
         <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="glass-card p-4 flex items-center gap-3 mb-4">
@@ -123,6 +136,7 @@ export function Invoices() {
       )}
       </div>
       <ConfirmDialog open={!!deleteTarget} onClose={() => setDeleteTarget(null)} onConfirm={handleDelete} loading={deleting} title="Delete Invoice" message={`Delete invoice ${deleteTarget}? This cannot be undone.`} />
+      <AIAssistantModal open={showAIModal} onClose={() => setShowAIModal(false)} onResult={handleAIResult} />
     </div>
   );
 }
