@@ -311,7 +311,11 @@ export const updateBankAccount = async (id: string, account: Partial<Omit<BankAc
 
 export const getTransactions = async (): Promise<Transaction[]> => {
   try {
-    const { data, error } = await supabase.from('transactions').select('*').order('date', { ascending: false });
+    const { data, error } = await supabase
+      .from('transactions')
+      .select('*')
+      .order('date', { ascending: false })
+      .order('created_at', { ascending: false });
     if (error) throw error;
     return data.map(row => ({
       id: row.id,
