@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Search, FileText, Trash2, Eye, TrendingUp, Sparkles } from 'lucide-react';
+import { Plus, Search, FileText, Trash2, Eye, TrendingUp, Sparkles, Copy } from 'lucide-react';
 import { PageHeader } from '../components/layout/PageHeader';
 import { TableSkeleton } from '../components/ui/Skeleton';
 import { ConfirmDialog } from '../components/ui/Modal';
@@ -103,6 +103,17 @@ export function Invoices() {
                     <td className="px-5 py-4">
                       <div className="flex items-center justify-center gap-2">
                         <button onClick={() => navigate(`/preview/${encodeURIComponent(inv.invoiceNo)}`)} title="View Invoice" className="w-8 h-8 rounded-lg bg-accent-blue/10 flex items-center justify-center text-accent-blue hover:bg-accent-blue/20 transition-colors"><Eye size={14} /></button>
+                        <button 
+                          onClick={() => {
+                            const { invoiceNo, dateOfSupply, ...rest } = inv;
+                            const items = inv.items.map(item => ({ ...item, id: crypto.randomUUID() }));
+                            navigate('/new', { state: { prefill: { ...rest, items } } });
+                          }} 
+                          title="Duplicate Invoice" 
+                          className="w-8 h-8 rounded-lg bg-accent-gold/10 flex items-center justify-center text-accent-gold hover:bg-accent-gold/20 transition-colors"
+                        >
+                          <Copy size={14} />
+                        </button>
                         <button onClick={() => setDeleteTarget(inv.invoiceNo)} title="Delete" className="w-8 h-8 rounded-lg bg-neon-red/10 flex items-center justify-center text-neon-red hover:bg-neon-red/20 transition-colors"><Trash2 size={14} /></button>
                       </div>
                     </td>
@@ -127,6 +138,17 @@ export function Invoices() {
                 </div>
                 <div className="flex gap-1">
                   <button onClick={() => navigate(`/preview/${encodeURIComponent(inv.invoiceNo)}`)} className="w-7 h-7 rounded-lg bg-accent-blue/10 flex items-center justify-center text-accent-blue"><Eye size={13} /></button>
+                  <button 
+                    onClick={() => {
+                      const { invoiceNo, dateOfSupply, ...rest } = inv;
+                      const items = inv.items.map(item => ({ ...item, id: crypto.randomUUID() }));
+                      navigate('/new', { state: { prefill: { ...rest, items } } });
+                    }} 
+                    className="w-7 h-7 rounded-lg bg-accent-gold/10 flex items-center justify-center text-accent-gold"
+                    title="Duplicate Invoice"
+                  >
+                    <Copy size={13} />
+                  </button>
                   <button onClick={() => setDeleteTarget(inv.invoiceNo)} className="w-7 h-7 rounded-lg bg-neon-red/10 flex items-center justify-center text-neon-red"><Trash2 size={13} /></button>
                 </div>
               </div>

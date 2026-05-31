@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, ArrowUpDown, Banknote, Search, Pencil, Trash2, Download, Calendar } from 'lucide-react';
+import { Plus, ArrowUpDown, Banknote, Search, Pencil, Trash2, Download, Calendar, Copy } from 'lucide-react';
 import { PageHeader } from '../components/layout/PageHeader';
 import { TableSkeleton } from '../components/ui/Skeleton';
 import { Modal, ConfirmDialog } from '../components/ui/Modal';
@@ -139,6 +139,20 @@ export function Receipts() {
 
   const openAdd = () => { setEditing(null); setForm(emptyForm()); setShowForm(true); };
   const openEdit = (t: Transaction) => { setEditing(t); setForm({ date: t.date, amount: String(t.amount), type: t.type, mode: t.mode, bankAccountId: t.bankAccountId || '', customerId: t.customerId || '', particulars: t.particulars || '', refNo: t.refNo || '' }); setShowForm(true); };
+  const openDuplicate = (t: Transaction) => {
+    setEditing(null);
+    setForm({
+      date: '',
+      amount: '',
+      type: t.type,
+      mode: t.mode,
+      bankAccountId: t.bankAccountId || '',
+      customerId: t.customerId || '',
+      particulars: t.particulars || '',
+      refNo: t.refNo || ''
+    });
+    setShowForm(true);
+  };
 
   const handleSave = async () => {
     if (!form.amount) {
@@ -297,8 +311,15 @@ export function Receipts() {
                 >
                   <Download size={12} />
                 </button>
-                <button onClick={() => openEdit(t)} className="w-7 h-7 rounded-lg bg-white/5 flex items-center justify-center text-slate-400 hover:text-content-primary hover:bg-white/10"><Pencil size={12} /></button>
-                <button onClick={() => setDeleteTarget(t.id)} className="w-7 h-7 rounded-lg bg-neon-red/10 flex items-center justify-center text-neon-red hover:bg-neon-red/20"><Trash2 size={12} /></button>
+                <button 
+                  onClick={() => openDuplicate(t)} 
+                  className="w-7 h-7 rounded-lg bg-accent-gold/10 flex items-center justify-center text-accent-gold hover:bg-accent-gold/20"
+                  title="Duplicate Transaction"
+                >
+                  <Copy size={12} />
+                </button>
+                <button onClick={() => openEdit(t)} title="Edit" className="w-7 h-7 rounded-lg bg-white/5 flex items-center justify-center text-slate-400 hover:text-content-primary hover:bg-white/10"><Pencil size={12} /></button>
+                <button onClick={() => setDeleteTarget(t.id)} title="Delete" className="w-7 h-7 rounded-lg bg-neon-red/10 flex items-center justify-center text-neon-red hover:bg-neon-red/20"><Trash2 size={12} /></button>
               </div>
             </div>
           ))}
