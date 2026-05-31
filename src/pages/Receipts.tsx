@@ -159,6 +159,10 @@ export function Receipts() {
       alert('Please enter an amount.');
       return;
     }
+    if (!form.customerId) {
+      alert('Please select a Customer.');
+      return;
+    }
     if (form.mode === 'Bank' && !form.bankAccountId) {
       alert('Please select a Bank Account.');
       return;
@@ -338,8 +342,8 @@ export function Receipts() {
             <Select label="Type" value={form.type} onChange={set('type')} options={TYPE_OPTS} />
             <Select label="Mode" value={form.mode} onChange={set('mode')} options={MODE_OPTS} />
           </div>
-          <Select label="Customer" value={form.customerId} onChange={set('customerId')}
-            options={[{ value: '', label: 'No customer' }, ...customers.map(c => ({ value: c.id, label: c.name }))]}
+          <Select label="Customer *" value={form.customerId} onChange={set('customerId')}
+            options={[{ value: '', label: '— Select Customer —' }, ...customers.map(c => ({ value: c.id, label: c.name }))]}
           />
           <Input label="Particulars" value={form.particulars} onChange={set('particulars')} placeholder="Payment description" />
           <Input label="Ref No" value={form.refNo} onChange={set('refNo')} placeholder="Cheque / UTR no." />

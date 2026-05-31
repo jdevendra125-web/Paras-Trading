@@ -67,37 +67,62 @@ function NewInvoiceWrapper() {
     loadingCharges: '', transportCharges: '', otherCharges: '', hamali: '', reportable: false,
   });
 
-  React.useEffect(() => {
-    async function fetchDefaults() {
-      const [userSettings, latestNo, mostSelling] = await Promise.all([getSettings(), getLatestInvoiceNo(), getMostSellingItem()]);
-      const prefix = userSettings?.invoicePrefix || 'PT/25-26/';
-      let nextNo = `${prefix}001`;
-      if (latestNo && latestNo.startsWith(prefix)) {
-        const numStr = latestNo.substring(prefix.length);
-        const num = parseInt(numStr, 10);
-        if (!isNaN(num)) nextNo = `${prefix}${String(num + 1).padStart(3, '0')}`;
-      }
-      
-      const prefill = location.state?.prefill;
-      
-      setInvoiceData(prev => ({
-        ...prev, 
-        ...prefill,
-        invoiceNo: nextNo,
-        invoiceType: (userSettings?.invoiceFormat as any) || 'goods',
-        items: prefill?.items?.length ? prefill.items : [{ id: crypto.randomUUID(), description: mostSelling?.description || 'Jaggery', hsnCode: mostSelling?.hsnCode || '17011410', qty: '', unit: mostSelling?.unit || 'Kgs', inclusiveRate: '', gstRate: mostSelling?.gstRate || 0, isInclusive: true }],
-      }));
-      setDefaultsLoaded(true);
+  const fetchDefaults = React.useCallback(async (isReset = false) => {
+    setDefaultsLoaded(false);
+    const [userSettings, latestNo, mostSelling] = await Promise.all([getSettings(), getLatestInvoiceNo(), getMostSellingItem()]);
+    const prefix = userSettings?.invoicePrefix || 'PT/25-26/';
+    let nextNo = `${prefix}001`;
+    if (latestNo && latestNo.startsWith(prefix)) {
+      const numStr = latestNo.substring(prefix.length);
+      const num = parseInt(numStr, 10);
+      if (!isNaN(num)) nextNo = `${prefix}${String(num + 1).padStart(3, '0')}`;
     }
-    fetchDefaults();
+    
+    const prefill = !isReset ? location.state?.prefill : null;
+    
+    setInvoiceData({
+      invoiceNo: nextNo,
+      invoiceType: prefill?.invoiceType || (userSettings?.invoiceFormat as any) || 'goods',
+      dateOfSupply: prefill?.dateOfSupply || '',
+      poNo: prefill?.poNo || '',
+      poDate: prefill?.poDate || '',
+      vehicleNo: prefill?.vehicleNo || '',
+      nameOfTransport: prefill?.nameOfTransport || 'Private',
+      placeOfSupply: prefill?.placeOfSupply || 'Dharangaon',
+      modeOfTransport: prefill?.modeOfTransport || 'By Road',
+      customerId: prefill?.customerId || '',
+      receiverName: prefill?.receiverName || '',
+      receiverAddress: prefill?.receiverAddress || '',
+      receiverState: prefill?.receiverState || '',
+      receiverStateCode: prefill?.receiverStateCode || '',
+      receiverGstin: prefill?.receiverGstin || '',
+      receiverRegion: prefill?.receiverRegion || '',
+      items: prefill?.items?.length ? prefill.items : [{ id: crypto.randomUUID(), description: mostSelling?.description || 'Jaggery', hsnCode: mostSelling?.hsnCode || '17011410', qty: '', unit: mostSelling?.unit || 'Kgs', inclusiveRate: '', gstRate: mostSelling?.gstRate || 0, isInclusive: true }],
+      loadingCharges: prefill?.loadingCharges || '',
+      transportCharges: prefill?.transportCharges || '',
+      otherCharges: prefill?.otherCharges || '',
+      hamali: prefill?.hamali || '',
+      reportable: prefill?.reportable || false,
+    });
+    setDefaultsLoaded(true);
   }, [location.state]);
+
+  React.useEffect(() => {
+    fetchDefaults(false);
+  }, [fetchDefaults]);
 
   const handleGenerate = async () => {
     await saveInvoice(invoiceData);
     navigate(`/preview/${encodeURIComponent(invoiceData.invoiceNo)}`);
   };
 
-  return <InvoiceForm data={invoiceData} onChange={setInvoiceData} onGenerate={handleGenerate} defaultsLoading={!defaultsLoaded} />;
+  const handleSaveAndNew = async () => {
+    await saveInvoice(invoiceData);
+    await fetchDefaults(true);
+    alert('Invoice saved successfully! Ready for next entry.');
+  };
+
+  return <InvoiceForm data={invoiceData} onChange={setInvoiceData} onGenerate={handleGenerate} onSaveAndNew={handleSaveAndNew} defaultsLoading={!defaultsLoaded} />;
 }
 
 // ─── Preview Wrapper ──────────────────────────────────────────────────────────

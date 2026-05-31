@@ -121,14 +121,16 @@ interface Props {
   data: InvoiceData;
   onChange: (d: InvoiceData) => void;
   onGenerate: () => Promise<void>;
+  onSaveAndNew?: () => Promise<void>;
   defaultsLoading?: boolean; // Bug 11: disable save until invoice number is resolved
 }
 
-export function InvoiceForm({ data, onChange, onGenerate, defaultsLoading = false }: Props) {
+export function InvoiceForm({ data, onChange, onGenerate, onSaveAndNew, defaultsLoading = false }: Props) {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [masterItems, setMasterItems] = useState<MasterItem[]>([]);
   const [settings, setSettings] = useState<UserSettings | null>(null);
   const [saving, setSaving] = useState(false);
+  const [savingNew, setSavingNew] = useState(false);
   const [showTransport, setShowTransport] = useState(false);
   const [showCustomerModal, setShowCustomerModal] = useState(false);
   const [showItemModal, setShowItemModal] = useState<{isOpen: boolean; rowId: string | null}>({isOpen: false, rowId: null});
@@ -142,6 +144,32 @@ export function InvoiceForm({ data, onChange, onGenerate, defaultsLoading = fals
   useEffect(() => {
     fetchMasters();
   }, [fetchMasters]);
+
+  const handleSaveAndNew = useCallback(async () => {
+    if (!onSaveAndNew) return;
+    setSavingNew(true);
+    try {
+      await onSaveAndNew();
+    } finally {
+      setSavingNew(false);
+    }
+  }, [onSaveAndNew]);
+
+  useEffect(() => {
+    if (!onSaveAndNew) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.ctrlKey && e.key === 'Enter') {
+        if (window.innerWidth >= 1024) {
+          e.preventDefault();
+          if (!saving && !savingNew && !defaultsLoading) {
+            handleSaveAndNew();
+          }
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onSaveAndNew, saving, savingNew, defaultsLoading, handleSaveAndNew]);
 
   // Bug 8 fix: numeric charge fields are stored as number|'' not raw string
   const set = useCallback((key: keyof InvoiceData) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -340,16 +368,35 @@ export function InvoiceForm({ data, onChange, onGenerate, defaultsLoading = fals
         </div>
       </div>
 
-      <Button
-        onClick={handleGenerate}
-        loading={saving || defaultsLoading}
-        disabled={defaultsLoading}
-        className="w-full"
-        size="lg"
-        icon={<Save size={16} />}
-      >
-        {defaultsLoading ? 'Preparing Invoice…' : 'Save & Generate Invoice'}
-      </Button>
+      <div className="flex flex-col sm:flex-row gap-3">
+        {onSaveAndNew && (
+          <Button
+            onClick={handleSaveAndNew}
+            loading={savingNew || defaultsLoading}
+            disabled={defaultsLoading}
+            variant="secondary"
+            className="flex-1"
+            size="lg"
+            icon={<Save size={16} />}
+          >
+            {defaultsLoading 
+              ? 'Preparing…' 
+              : window.innerWidth >= 1024 
+                ? 'Save & New Invoice (Ctrl+Enter)' 
+                : 'Save & New Invoice'}
+          </Button>
+        )}
+        <Button
+          onClick={handleGenerate}
+          loading={saving || defaultsLoading}
+          disabled={defaultsLoading}
+          className="flex-1"
+          size="lg"
+          icon={<Save size={16} />}
+        >
+          {defaultsLoading ? 'Preparing Invoice…' : 'Save & Generate Invoice'}
+        </Button>
+      </div>
 
       {showCustomerModal && (
         <AddCustomerModal 

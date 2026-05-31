@@ -38,52 +38,99 @@ export function CustomerOutstandingBills() {
       if (foundCustomer) setCustomer(foundCustomer);
 
       const customerInvoices = iData.filter(i => i.customerId === customerId);
-      const customerReceipts = tData.filter(t => t.customerId === customerId && t.type === 'CR');
+      const customerTransactions = tData.filter(t => t.customerId === customerId);
+      const customerReceipts = customerTransactions.filter(t => t.type === 'CR');
+      const customerDebits = customerTransactions.filter(t => t.type === 'DR');
 
       // Calculate total cash received
       let totalReceived = customerReceipts.reduce((sum, rec) => sum + rec.amount, 0);
 
-      // Sort invoices from oldest to newest (FIFO)
-      const sortedInvoices = customerInvoices.map(inv => {
+      interface DebitItem {
+        invoiceNo: string;
+        date: string;
+        totalAmount: number;
+        pendingAmount: number;
+        rawDate: Date;
+        type: 'opening_balance' | 'invoice' | 'debit_txn';
+      }
+
+      const items: DebitItem[] = [];
+
+      // 1. Opening Balance
+      const opening = Number(foundCustomer?.openingBalance) || 0;
+      if (opening > 0) {
+        items.push({
+          invoiceNo: 'Opening Balance',
+          date: '—',
+          totalAmount: opening,
+          pendingAmount: 0,
+          rawDate: new Date(0), // earliest Date so it goes first
+          type: 'opening_balance'
+        });
+      }
+
+      // 2. Invoices
+      customerInvoices.forEach(inv => {
         let rawDate = new Date();
         const parts = inv.dateOfSupply.split('-');
         if (parts.length === 3) {
           if (parts[0].length === 4) rawDate = new Date(`${parts[0]}-${parts[1]}-${parts[2]}T12:00:00`);
           else rawDate = new Date(`${parts[2]}-${parts[1]}-${parts[0]}T12:00:00`);
         }
-        return {
-          ...inv,
-          calculatedTotal: inv.totalAmount || calculateInvoiceTotal(inv),
-          rawDate
-        };
-      }).sort((a, b) => a.rawDate.getTime() - b.rawDate.getTime());
+        items.push({
+          invoiceNo: inv.invoiceNo,
+          date: inv.dateOfSupply,
+          totalAmount: inv.totalAmount || calculateInvoiceTotal(inv),
+          pendingAmount: 0,
+          rawDate,
+          type: 'invoice'
+        });
+      });
+
+      // 3. DR transactions
+      customerDebits.forEach(t => {
+        let rawDate = new Date();
+        const parts = t.date.split('-');
+        if (parts.length === 3) {
+          if (parts[0].length === 4) rawDate = new Date(`${parts[0]}-${parts[1]}-${parts[2]}T12:00:00`);
+          else rawDate = new Date(`${parts[2]}-${parts[1]}-${parts[0]}T12:00:00`);
+        }
+        items.push({
+          invoiceNo: t.particulars || 'Debit Entry',
+          date: t.date,
+          totalAmount: t.amount,
+          pendingAmount: 0,
+          rawDate,
+          type: 'debit_txn'
+        });
+      });
+
+      // Sort chronologically (Opening Balance is first, then rest by rawDate)
+      items.sort((a, b) => a.rawDate.getTime() - b.rawDate.getTime());
 
       const pending: PendingBill[] = [];
 
-      for (const inv of sortedInvoices) {
-        const invAmount = inv.calculatedTotal;
-        if (totalReceived >= invAmount) {
-          // Fully paid
-          totalReceived -= invAmount;
+      for (const item of items) {
+        const amount = item.totalAmount;
+        if (totalReceived >= amount) {
+          totalReceived -= amount;
         } else if (totalReceived > 0) {
-          // Partially paid
-          const remaining = invAmount - totalReceived;
+          const remaining = amount - totalReceived;
           pending.push({
-            invoiceNo: inv.invoiceNo,
-            date: inv.dateOfSupply,
-            totalAmount: invAmount,
+            invoiceNo: item.invoiceNo,
+            date: item.date,
+            totalAmount: amount,
             pendingAmount: remaining,
-            rawDate: inv.rawDate
+            rawDate: item.rawDate
           });
           totalReceived = 0;
         } else {
-          // Completely unpaid
           pending.push({
-            invoiceNo: inv.invoiceNo,
-            date: inv.dateOfSupply,
-            totalAmount: invAmount,
-            pendingAmount: invAmount,
-            rawDate: inv.rawDate
+            invoiceNo: item.invoiceNo,
+            date: item.date,
+            totalAmount: amount,
+            pendingAmount: amount,
+            rawDate: item.rawDate
           });
         }
       }
@@ -171,7 +218,7 @@ export function CustomerOutstandingBills() {
               {pendingBills.map((bill) => (
                 <tr key={bill.invoiceNo}>
                   <td>{bill.date}</td>
-                  <td>#{bill.invoiceNo.split('/').pop()}</td>
+                  <td>{bill.invoiceNo.includes('Balance') || bill.invoiceNo.includes('Entry') ? bill.invoiceNo : (bill.invoiceNo.includes('/') ? '#' + bill.invoiceNo.split('/').pop() : '#' + bill.invoiceNo)}</td>
                   <td style={{ textAlign: 'right' }}>{bill.totalAmount.toFixed(2)}</td>
                   <td style={{ textAlign: 'right', fontWeight: 'bold', color: 'red' }}>
                     {bill.pendingAmount.toFixed(2)}

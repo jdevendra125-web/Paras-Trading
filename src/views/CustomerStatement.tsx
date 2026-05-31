@@ -41,7 +41,9 @@ export function CustomerStatement() {
       if (foundCustomer) setCustomer(foundCustomer);
 
       const customerInvoices = iData.filter(i => i.customerId === customerId);
-      const customerReceipts = tData.filter(t => t.customerId === customerId && t.type === 'CR');
+      const customerTransactions = tData.filter(t => t.customerId === customerId);
+      const customerReceipts = customerTransactions.filter(t => t.type === 'CR');
+      const customerDebits = customerTransactions.filter(t => t.type === 'DR');
 
       const entries: Omit<LedgerEntry, 'balance'>[] = [];
 
@@ -85,10 +87,31 @@ export function CustomerStatement() {
         });
       });
 
+      customerDebits.forEach(rec => {
+        let rawDate = new Date();
+        const parts = rec.date.split('-');
+        if (parts.length === 3) {
+          if (parts[0].length === 4) rawDate = new Date(`${parts[0]}-${parts[1]}-${parts[2]}T12:00:00`);
+          else rawDate = new Date(`${parts[2]}-${parts[1]}-${parts[0]}T12:00:00`);
+        }
+        
+        entries.push({
+          id: rec.id,
+          date: rec.date,
+          displayDate: rec.date,
+          particulars: rec.particulars || `Debit Charge (${rec.mode}${rec.refNo ? ' ' + rec.refNo : ''})`,
+          type: 'Invoice',
+          debit: rec.amount,
+          credit: 0,
+          rawDate
+        });
+      });
+
       // Sort chronological
       entries.sort((a, b) => a.rawDate.getTime() - b.rawDate.getTime());
 
-      let currentBalance = 0;
+      const opening = Number(foundCustomer?.openingBalance) || 0;
+      let currentBalance = opening;
       const finalLedger: LedgerEntry[] = entries.map(entry => {
         currentBalance += entry.debit;
         currentBalance -= entry.credit;
@@ -212,7 +235,7 @@ export function CustomerStatement() {
                 <td colSpan={2} style={{ fontWeight: 600 }}>Opening Balance</td>
                 <td></td>
                 <td></td>
-                <td style={{ textAlign: 'right', fontWeight: 600 }}>0.00</td>
+                <td style={{ textAlign: 'right', fontWeight: 600 }}>{opening.toFixed(2)}</td>
               </tr>
               {ledger.map((entry) => (
                 <tr key={entry.id}>

@@ -25,8 +25,8 @@ export function CustomerOutstandingBills() {
     Promise.all([getCustomers(), getInvoices(), getTransactions(), getSettings()]).then(([custs, invs, txns, sets]) => {
       setCustomer(custs.find(c => c.id === customerId) || null);
       setBills(invs.filter(i => i.customerId === customerId));
-      // Only credit (received) transactions for this customer
-      setTransactions(txns.filter(t => t.customerId === customerId && t.type === 'CR'));
+      // Load all transactions for this customer to capture DR and CR
+      setTransactions(txns.filter(t => t.customerId === customerId));
       setSettings(sets);
       setLoading(false);
     });
@@ -34,24 +34,108 @@ export function CustomerOutstandingBills() {
 
   // Total paid by this customer across all transactions
   const totalPaid = useMemo(() =>
-    transactions.reduce((s, t) => s + t.amount, 0),
+    transactions.filter(t => t.type === 'CR').reduce((s, t) => s + t.amount, 0),
     [transactions]
   );
 
-  // Compute per-bill outstanding by distributing payments against bills chronologically
-  const billsWithOutstanding = useMemo(() => {
-    const totalBilled = bills.reduce((s, b) => s + (b.totalAmount || 0), 0);
-    let remaining = Math.max(0, totalBilled - totalPaid);
+  const parseDateStr = (dateStr: string): number => {
+    if (!dateStr) return 0;
+    const parts = dateStr.split('-');
+    if (parts.length === 3) {
+      if (parts[0].length === 4) {
+        return new Date(`${parts[0]}-${parts[1]}-${parts[2]}T12:00:00`).getTime();
+      }
+      return new Date(`${parts[2]}-${parts[1]}-${parts[0]}T12:00:00`).getTime();
+    }
+    const parsed = Date.parse(dateStr);
+    return isNaN(parsed) ? 0 : parsed;
+  };
 
-    // Distribute remaining against each bill oldest→newest
-    const sorted = [...bills].sort((a, b) => a.dateOfSupply.localeCompare(b.dateOfSupply));
-    return sorted.map(b => {
-      const amount = b.totalAmount || 0;
-      const outstanding = Math.min(amount, remaining);
-      remaining = Math.max(0, remaining - outstanding);
-      return { ...b, outstanding };
-    }).filter(b => b.outstanding > 0); // Only truly unpaid bills
-  }, [bills, totalPaid]);
+  const renderDate = (dateStr: string) => {
+    if (!dateStr || dateStr === '—' || dateStr === 'Opening Balance') return '—';
+    if (dateStr.split('-').length === 3) {
+      try {
+        return formatDateShort(dateStr);
+      } catch {
+        return dateStr;
+      }
+    }
+    return dateStr;
+  };
+
+  // Compute per-bill outstanding by distributing payments against bills chronologically (FIFO)
+  const billsWithOutstanding = useMemo(() => {
+    interface DebitItem {
+      invoiceNo: string;
+      dateOfSupply: string;
+      totalAmount: number;
+      outstanding: number;
+      type: 'opening_balance' | 'invoice' | 'debit_txn';
+      timestamp: number;
+    }
+
+    const items: DebitItem[] = [];
+
+    // 1. Opening Balance (always oldest)
+    const opening = Number(customer?.openingBalance) || 0;
+    if (opening > 0) {
+      items.push({
+        invoiceNo: 'Opening Balance',
+        dateOfSupply: '—',
+        totalAmount: opening,
+        outstanding: 0,
+        type: 'opening_balance',
+        timestamp: 0, // lowest possible timestamp so it goes first
+      });
+    }
+
+    // 2. Invoices
+    bills.forEach(b => {
+      items.push({
+        invoiceNo: b.invoiceNo,
+        dateOfSupply: b.dateOfSupply,
+        totalAmount: b.totalAmount || 0,
+        outstanding: 0,
+        type: 'invoice',
+        timestamp: parseDateStr(b.dateOfSupply),
+      });
+    });
+
+    // 3. DR transactions (debits)
+    transactions.filter(t => t.type === 'DR').forEach(t => {
+      items.push({
+        invoiceNo: t.particulars || 'Debit Entry',
+        dateOfSupply: t.date,
+        totalAmount: t.amount,
+        outstanding: 0,
+        type: 'debit_txn',
+        timestamp: parseDateStr(t.date),
+      });
+    });
+
+    // Sort chronologically (Opening Balance is first, then rest by timestamp)
+    const sorted = items.sort((a, b) => {
+      if (a.timestamp === 0) return -1;
+      if (b.timestamp === 0) return 1;
+      return a.timestamp - b.timestamp;
+    });
+
+    // Distribute totalPaid sequentially (FIFO)
+    let remainingPaid = totalPaid;
+    return sorted.map(item => {
+      const amount = item.totalAmount;
+      if (remainingPaid >= amount) {
+        remainingPaid -= amount;
+        return { ...item, outstanding: 0 };
+      } else if (remainingPaid > 0) {
+        const outstanding = amount - remainingPaid;
+        remainingPaid = 0;
+        return { ...item, outstanding };
+      } else {
+        return { ...item, outstanding: amount };
+      }
+    }).filter(item => item.outstanding > 0);
+  }, [customer, bills, transactions, totalPaid]);
 
   const totalOutstanding = useMemo(() =>
     billsWithOutstanding.reduce((s, b) => s + b.outstanding, 0),
@@ -90,7 +174,7 @@ export function CustomerOutstandingBills() {
         icon={<AlertCircle size={18} />} 
         action={<Button onClick={handleDownloadPDF} loading={downloading} size="sm" icon={<Download size={14} />}>PDF</Button>}
       />
-      {!loading && bills.length > 0 && (
+      {!loading && (bills.length > 0 || (Number(customer?.openingBalance) || 0) > 0) && (
         <div className="glass-card p-4 flex items-center gap-3 mb-4">
           <div className="w-9 h-9 rounded-xl bg-warning/10 border border-warning/20 flex items-center justify-center">
             <AlertCircle size={16} className="text-warning" />
@@ -123,7 +207,7 @@ export function CustomerOutstandingBills() {
             >
               <div>
                 <p className="text-sm font-semibold text-content-primary">{b.invoiceNo}</p>
-                <p className="text-xs text-slate-500 mt-0.5">{formatDateShort(b.dateOfSupply)} · Billed: {formatCurrency(b.totalAmount || 0)}</p>
+                <p className="text-xs text-slate-500 mt-0.5">{renderDate(b.dateOfSupply)} · Billed: {formatCurrency(b.totalAmount || 0)}</p>
               </div>
               <div className="text-right">
                 <p className="text-sm font-bold amount text-warning">{formatCurrency(b.outstanding)}</p>
@@ -166,15 +250,15 @@ export function CustomerOutstandingBills() {
             <thead>
               <tr style={{ borderBottom: '2px solid #000', textAlign: 'left' }}>
                 <th style={{ padding: '12px 8px' }}>Date</th>
-                <th style={{ padding: '12px 8px' }}>Invoice No</th>
-                <th style={{ padding: '12px 8px', textAlign: 'right' }}>Invoice Amount</th>
+                <th style={{ padding: '12px 8px' }}>Invoice No / Description</th>
+                <th style={{ padding: '12px 8px', textAlign: 'right' }}>Total Amount</th>
                 <th style={{ padding: '12px 8px', textAlign: 'right' }}>Pending Amount</th>
               </tr>
             </thead>
             <tbody>
               {billsWithOutstanding.map(b => (
                 <tr key={b.invoiceNo} style={{ borderBottom: '1px solid #eee' }}>
-                  <td style={{ padding: '12px 8px' }}>{formatDateShort(b.dateOfSupply)}</td>
+                  <td style={{ padding: '12px 8px' }}>{renderDate(b.dateOfSupply)}</td>
                   <td style={{ padding: '12px 8px', fontWeight: 'bold' }}>{b.invoiceNo}</td>
                   <td style={{ padding: '12px 8px', textAlign: 'right' }}>{formatCurrency(b.totalAmount || 0)}</td>
                   <td style={{ padding: '12px 8px', textAlign: 'right', fontWeight: 'bold', color: '#DC2626' }}>{formatCurrency(b.outstanding)}</td>

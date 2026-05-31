@@ -35,17 +35,61 @@ export function CustomerStatement() {
   };
 
   const totalBilled = useMemo(() => invoices.reduce((s, i) => s + (i.totalAmount || 0), 0), [invoices]);
+  const totalDR = useMemo(() => transactions.filter(t => t.type === 'DR').reduce((s, t) => s + t.amount, 0), [transactions]);
   const totalPaid = useMemo(() => transactions.filter(t => t.type === 'CR').reduce((s, t) => s + t.amount, 0), [transactions]);
-  const balance = totalBilled - totalPaid;
+  const opening = Number(customer?.openingBalance) || 0;
+  const balance = (opening + totalBilled + totalDR) - totalPaid;
 
   type Entry = { date: string; description: string; debit: number; credit: number };
   const entries: Entry[] = useMemo(() => {
-    const rows: Entry[] = [
-      ...invoices.map(i => ({ date: i.dateOfSupply, description: `Invoice ${i.invoiceNo}`, debit: i.totalAmount || 0, credit: 0 })),
-      ...transactions.filter(t => t.type === 'CR').map(t => ({ date: t.date, description: t.particulars || 'Payment received', debit: 0, credit: t.amount })),
-    ];
-    return rows.sort((a, b) => a.date.localeCompare(b.date));
-  }, [invoices, transactions]);
+    const rows: Entry[] = [];
+
+    // Add Opening Balance
+    if (opening > 0) {
+      rows.push({
+        date: '—',
+        description: 'Opening Balance',
+        debit: opening,
+        credit: 0
+      });
+    }
+
+    // Add Invoices
+    invoices.forEach(i => {
+      rows.push({
+        date: i.dateOfSupply,
+        description: `Invoice ${i.invoiceNo}`,
+        debit: i.totalAmount || 0,
+        credit: 0
+      });
+    });
+
+    // Add Transactions (CR and DR)
+    transactions.forEach(t => {
+      if (t.type === 'CR') {
+        rows.push({
+          date: t.date,
+          description: t.particulars || 'Payment received',
+          debit: 0,
+          credit: t.amount
+        });
+      } else {
+        rows.push({
+          date: t.date,
+          description: t.particulars || 'Debit charge',
+          debit: t.amount,
+          credit: 0
+        });
+      }
+    });
+
+    // Sort by date (Opening Balance must be first)
+    return rows.sort((a, b) => {
+      if (a.date === '—') return -1;
+      if (b.date === '—') return 1;
+      return a.date.localeCompare(b.date);
+    });
+  }, [customer, invoices, transactions, opening]);
 
   return (
     <div className="page-container">
@@ -70,7 +114,7 @@ export function CustomerStatement() {
       {!loading && (
         <div className="grid grid-cols-3 gap-2 mb-4">
           {[
-            { label: 'Billed', value: formatCurrency(totalBilled), color: 'text-accent-blue' },
+            { label: 'Billed', value: formatCurrency(opening + totalBilled + totalDR), color: 'text-accent-blue' },
             { label: 'Paid', value: formatCurrency(totalPaid), color: 'text-neon-green' },
             { label: 'Balance', value: formatCurrency(balance), color: balance > 0 ? 'text-warning' : 'text-neon-green' },
           ].map(s => (
@@ -91,7 +135,7 @@ export function CustomerStatement() {
           </div>
           {entries.map((e, i) => (
             <div key={i} className={`grid grid-cols-4 px-4 py-2.5 items-center ${i < entries.length - 1 ? 'border-b border-white/[0.04]' : ''}`}>
-              <p className="text-xs text-slate-500">{formatDateShort(e.date)}</p>
+              <p className="text-xs text-slate-500">{e.date === '—' ? '—' : formatDateShort(e.date)}</p>
               <p className="text-xs text-content-primary truncate pr-2 col-span-1">{e.description}</p>
               <p className="text-xs amount text-neon-red">{e.debit > 0 ? formatCurrency(e.debit) : '-'}</p>
               <p className="text-xs amount text-neon-green">{e.credit > 0 ? formatCurrency(e.credit) : '-'}</p>
