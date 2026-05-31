@@ -314,7 +314,6 @@ export const getTransactions = async (): Promise<Transaction[]> => {
     const { data, error } = await supabase
       .from('transactions')
       .select('*')
-      .order('date', { ascending: false })
       .order('created_at', { ascending: false });
     if (error) throw error;
     return data.map(row => ({
