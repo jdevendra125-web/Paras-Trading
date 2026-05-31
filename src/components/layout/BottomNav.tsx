@@ -1,13 +1,13 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { LayoutDashboard, FileText, IndianRupee, Menu, Database } from 'lucide-react';
+import { LayoutDashboard, FileText, IndianRupee, Menu, Receipt } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 
 const navItems = [
   { path: '/', icon: LayoutDashboard, label: 'Home' },
   { path: '/invoices', icon: FileText, label: 'Invoices' },
-  { path: '/masters', icon: Database, label: 'Masters' },
+  { path: '/receipts', icon: Receipt, label: 'Receipts' },
   { path: '/outstandings', icon: IndianRupee, label: 'Due' },
 ];
 
@@ -16,14 +16,7 @@ export function BottomNav({ onOpenMenu }: { onOpenMenu: () => void }) {
   const location = useLocation();
   if (!user) return null;
 
-  // Masters active state should also match sub-routes like /customers, /items, /bank-accounts
   const isActive = (path: string) => {
-    if (path === '/masters') {
-      return location.pathname === '/masters' || 
-             location.pathname === '/customers' || 
-             location.pathname === '/items' || 
-             location.pathname === '/bank-accounts';
-    }
     return location.pathname === path;
   };
 

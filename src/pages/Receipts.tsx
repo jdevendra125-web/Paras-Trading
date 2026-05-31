@@ -279,7 +279,7 @@ export function Receipts() {
   return (
     <div className="page-container">
       <PageHeader title="Receipts" subtitle="Cash & bank entries" icon={<ArrowUpDown size={18} />}
-        action={<button onClick={openAdd} className="btn-primary text-xs px-3 py-2"><Plus size={14} /> Add</button>}
+        action={<Button onClick={openAdd} size="md" icon={<Plus size={16} />} className="!rounded-2xl shadow-md font-bold">Add Receipt</Button>}
       />
       <div className="grid grid-cols-2 gap-3 mb-4">
         <div className="glass-card p-3">
