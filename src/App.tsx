@@ -58,7 +58,7 @@ function NewInvoiceWrapper() {
   const [invoiceData, setInvoiceData] = useState<InvoiceData>({
     invoiceNo: '...',   // placeholder until fetchDefaults resolves
     invoiceType: 'goods',
-    dateOfSupply: todayISO(),
+    dateOfSupply: '',
     poNo: '', poDate: '', vehicleNo: '', nameOfTransport: 'Private',
     placeOfSupply: 'Dharangaon', modeOfTransport: 'By Road',
     customerId: '', receiverName: '', receiverAddress: '',
