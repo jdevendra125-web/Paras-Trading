@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Search, FileText, Trash2, Eye, TrendingUp, Sparkles, Copy } from 'lucide-react';
+import { Plus, Search, FileText, Trash2, Eye, TrendingUp, Sparkles, Copy, Pencil } from 'lucide-react';
 import { PageHeader } from '../components/layout/PageHeader';
 import { TableSkeleton } from '../components/ui/Skeleton';
 import { ConfirmDialog } from '../components/ui/Modal';
@@ -103,6 +103,7 @@ export function Invoices() {
                     <td className="px-5 py-4">
                       <div className="flex items-center justify-center gap-2">
                         <button onClick={() => navigate(`/preview/${encodeURIComponent(inv.invoiceNo)}`)} title="View Invoice" className="w-8 h-8 rounded-lg bg-accent-blue/10 flex items-center justify-center text-accent-blue hover:bg-accent-blue/20 transition-colors"><Eye size={14} /></button>
+                        <button onClick={() => navigate(`/edit/${encodeURIComponent(inv.invoiceNo)}`)} title="Edit Invoice" className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-slate-400 hover:text-content-primary hover:bg-white/10 transition-colors"><Pencil size={14} /></button>
                         <button 
                           onClick={() => {
                             const { invoiceNo, dateOfSupply, ...rest } = inv;
@@ -138,6 +139,7 @@ export function Invoices() {
                 </div>
                 <div className="flex gap-1">
                   <button onClick={() => navigate(`/preview/${encodeURIComponent(inv.invoiceNo)}`)} className="w-7 h-7 rounded-lg bg-accent-blue/10 flex items-center justify-center text-accent-blue"><Eye size={13} /></button>
+                  <button onClick={() => navigate(`/edit/${encodeURIComponent(inv.invoiceNo)}`)} className="w-7 h-7 rounded-lg bg-white/5 flex items-center justify-center text-slate-400 hover:text-content-primary hover:bg-white/10" title="Edit Invoice"><Pencil size={13} /></button>
                   <button 
                     onClick={() => {
                       const { invoiceNo, dateOfSupply, ...rest } = inv;

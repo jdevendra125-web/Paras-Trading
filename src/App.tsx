@@ -117,7 +117,33 @@ function PreviewWrapper() {
 
   if (loading) return <div className="page-container flex items-center justify-center h-64 text-slate-500 text-sm">Loading invoice...</div>;
   if (!invoiceData) return <div className="page-container"><p className="text-sm text-neon-red">Invoice not found.</p></div>;
-  return <InvoicePreviewPage data={invoiceData} onEdit={() => navigate(-1)} />;
+  return <InvoicePreviewPage data={invoiceData} onEdit={() => navigate(`/edit/${encodeURIComponent(invoiceData.invoiceNo)}`)} />;
+}
+
+// ─── Edit Invoice Wrapper ─────────────────────────────────────────────────────
+function EditInvoiceWrapper() {
+  const { invoiceNo } = useParams<{ invoiceNo: string }>();
+  const navigate = useNavigate();
+  const [invoiceData, setInvoiceData] = useState<InvoiceData | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  React.useEffect(() => {
+    if (!invoiceNo) return;
+    getInvoiceByNo(decodeURIComponent(invoiceNo)).then(d => {
+      if (d) setInvoiceData(d);
+      setLoading(false);
+    });
+  }, [invoiceNo]);
+
+  const handleSave = async () => {
+    if (!invoiceData) return;
+    await saveInvoice(invoiceData);
+    navigate(`/preview/${encodeURIComponent(invoiceData.invoiceNo)}`);
+  };
+
+  if (loading) return <div className="page-container flex items-center justify-center h-64 text-slate-500 text-sm">Loading invoice...</div>;
+  if (!invoiceData) return <div className="page-container"><p className="text-sm text-neon-red">Invoice not found.</p></div>;
+  return <InvoiceForm data={invoiceData} onChange={setInvoiceData} onGenerate={handleSave} />;
 }
 
 // ─── App Routes ───────────────────────────────────────────────────────────────
@@ -129,6 +155,7 @@ function AppRoutes() {
       <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
       <Route path="/invoices" element={<ProtectedRoute><Invoices /></ProtectedRoute>} />
       <Route path="/new" element={<ProtectedRoute><NewInvoiceWrapper /></ProtectedRoute>} />
+      <Route path="/edit/:invoiceNo" element={<ProtectedRoute><EditInvoiceWrapper /></ProtectedRoute>} />
       <Route path="/preview/:invoiceNo" element={<ProtectedRoute><PreviewWrapper /></ProtectedRoute>} />
       <Route path="/customers" element={<ProtectedRoute><Customers /></ProtectedRoute>} />
       <Route path="/outstandings" element={<ProtectedRoute><Outstandings /></ProtectedRoute>} />
