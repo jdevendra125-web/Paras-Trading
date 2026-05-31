@@ -24,6 +24,7 @@ export function CustomerStatement() {
   const [ledger, setLedger] = useState<LedgerEntry[]>([]);
   const [settings, setSettings] = useState<UserSettings | null>(null);
   const [loading, setLoading] = useState(true);
+  const [viewMode, setViewMode] = useState<'standard' | 'split'>('standard');
   const printRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -171,6 +172,9 @@ export function CustomerStatement() {
   if (!customer) return <div>Customer not found</div>;
 
   const opening = Number(customer?.openingBalance) || 0;
+  const totalPaid = ledger.filter(e => e.type === 'Receipt').reduce((sum, e) => sum + e.credit, 0);
+  const totalDR = ledger.filter(e => e.type === 'Invoice').reduce((sum, e) => sum + e.debit, 0);
+  const closingBalance = ledger.length > 0 ? ledger[ledger.length - 1].balance : opening;
 
   return (
     <div>
@@ -187,6 +191,45 @@ export function CustomerStatement() {
             <Share2 size={16} /> Share
           </button>
         </div>
+      </div>
+
+      <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', justifyContent: 'center' }} className="print-hidden">
+        <button 
+          onClick={() => setViewMode('standard')} 
+          style={{
+            flex: 1,
+            maxWidth: '200px',
+            backgroundColor: viewMode === 'standard' ? '#DC2626' : '#F3F4F6',
+            color: viewMode === 'standard' ? 'white' : '#4B5563',
+            border: '1px solid #E5E7EB',
+            padding: '8px 16px',
+            borderRadius: '6px',
+            cursor: 'pointer',
+            fontWeight: 'bold',
+            fontSize: '13px',
+            transition: 'all 0.2s'
+          }}
+        >
+          Standard Statement
+        </button>
+        <button 
+          onClick={() => setViewMode('split')} 
+          style={{
+            flex: 1,
+            maxWidth: '200px',
+            backgroundColor: viewMode === 'split' ? '#DC2626' : '#F3F4F6',
+            color: viewMode === 'split' ? 'white' : '#4B5563',
+            border: '1px solid #E5E7EB',
+            padding: '8px 16px',
+            borderRadius: '6px',
+            cursor: 'pointer',
+            fontWeight: 'bold',
+            fontSize: '13px',
+            transition: 'all 0.2s'
+          }}
+        >
+          Side-by-Side Ledger
+        </button>
       </div>
 
       <div style={{ overflowX: 'auto', paddingBottom: '20px' }}>
@@ -222,48 +265,134 @@ export function CustomerStatement() {
             <div style={{ marginTop: '4px', fontSize: '13px' }}><strong>GSTIN:</strong> {customer.gstin}</div>
           </div>
 
-          <table className="invoice-table">
-            <thead>
-              <tr>
-                <th style={{ width: '15%' }}>Date</th>
-                <th style={{ width: '40%' }}>Particulars</th>
-                <th style={{ width: '15%', textAlign: 'right' }}>Debit (₹)</th>
-                <th style={{ width: '15%', textAlign: 'right' }}>Credit (₹)</th>
-                <th style={{ width: '15%', textAlign: 'right' }}>Balance (₹)</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td colSpan={2} style={{ fontWeight: 600 }}>Opening Balance</td>
-                <td></td>
-                <td></td>
-                <td style={{ textAlign: 'right', fontWeight: 600 }}>{opening.toFixed(2)}</td>
-              </tr>
-              {ledger.map((entry) => (
-                <tr key={entry.id}>
-                  <td>{entry.displayDate}</td>
-                  <td>{entry.particulars}</td>
-                  <td style={{ textAlign: 'right' }}>{entry.debit > 0 ? entry.debit.toFixed(2) : ''}</td>
-                  <td style={{ textAlign: 'right', color: 'green' }}>{entry.credit > 0 ? entry.credit.toFixed(2) : ''}</td>
-                  <td style={{ textAlign: 'right', fontWeight: 'bold', color: entry.balance > 0 ? 'red' : 'inherit' }}>
-                    {Math.abs(entry.balance).toFixed(2)} {entry.balance > 0 ? 'Dr' : entry.balance < 0 ? 'Cr' : ''}
+          {viewMode === 'standard' ? (
+            <table className="invoice-table">
+              <thead>
+                <tr>
+                  <th style={{ width: '15%' }}>Date</th>
+                  <th style={{ width: '40%' }}>Particulars</th>
+                  <th style={{ width: '15%', textAlign: 'right' }}>Debit (₹)</th>
+                  <th style={{ width: '15%', textAlign: 'right' }}>Credit (₹)</th>
+                  <th style={{ width: '15%', textAlign: 'right' }}>Balance (₹)</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td colSpan={2} style={{ fontWeight: 600 }}>Opening Balance</td>
+                  <td></td>
+                  <td></td>
+                  <td style={{ textAlign: 'right', fontWeight: 600 }}>{opening.toFixed(2)}</td>
+                </tr>
+                {ledger.map((entry) => (
+                  <tr key={entry.id}>
+                    <td>{entry.displayDate}</td>
+                    <td>{entry.particulars}</td>
+                    <td style={{ textAlign: 'right' }}>{entry.debit > 0 ? entry.debit.toFixed(2) : ''}</td>
+                    <td style={{ textAlign: 'right', color: 'green' }}>{entry.credit > 0 ? entry.credit.toFixed(2) : ''}</td>
+                    <td style={{ textAlign: 'right', fontWeight: 'bold', color: entry.balance > 0 ? 'red' : 'inherit' }}>
+                      {Math.abs(entry.balance).toFixed(2)} {entry.balance > 0 ? 'Dr' : entry.balance < 0 ? 'Cr' : ''}
+                    </td>
+                  </tr>
+                ))}
+                {ledger.length === 0 && (
+                  <tr>
+                    <td colSpan={5} className="text-center text-muted">No transactions found for this customer.</td>
+                  </tr>
+                )}
+                <tr>
+                  <td colSpan={4} style={{ textAlign: 'right', fontWeight: 800 }}>Closing Balance:</td>
+                  <td style={{ textAlign: 'right', fontWeight: 800, color: (ledger.length > 0 && ledger[ledger.length - 1].balance > 0) ? 'red' : 'inherit' }}>
+                    {ledger.length > 0 ? Math.abs(ledger[ledger.length - 1].balance).toFixed(2) : '0.00'} 
+                    {ledger.length > 0 && ledger[ledger.length - 1].balance > 0 ? ' Dr' : ledger.length > 0 && ledger[ledger.length - 1].balance < 0 ? ' Cr' : ''}
                   </td>
                 </tr>
-              ))}
-              {ledger.length === 0 && (
-                <tr>
-                  <td colSpan={5} className="text-center text-muted">No transactions found for this customer.</td>
-                </tr>
-              )}
-              <tr>
-                <td colSpan={4} style={{ textAlign: 'right', fontWeight: 800 }}>Closing Balance:</td>
-                <td style={{ textAlign: 'right', fontWeight: 800, color: (ledger.length > 0 && ledger[ledger.length - 1].balance > 0) ? 'red' : 'inherit' }}>
-                  {ledger.length > 0 ? Math.abs(ledger[ledger.length - 1].balance).toFixed(2) : '0.00'} 
-                  {ledger.length > 0 && ledger[ledger.length - 1].balance > 0 ? ' Dr' : ledger.length > 0 && ledger[ledger.length - 1].balance < 0 ? ' Cr' : ''}
-                </td>
-              </tr>
-            </tbody>
-          </table>
+              </tbody>
+            </table>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              <div style={{ display: 'flex', gap: '20px' }}>
+                {/* Left Column: Receipts (CR) */}
+                <div style={{ flex: 1, border: '1px solid #E4E4EB', borderRadius: '8px', overflow: 'hidden' }}>
+                  <div style={{ padding: '12px 15px', backgroundColor: '#ECFDF5', borderBottom: '1px solid #E4E4EB', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: '13px', fontWeight: '700', color: '#065F46', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Receipts (Credit / CR)</span>
+                    <span style={{ fontSize: '13px', fontWeight: '800', color: '#065F46' }}>₹ {totalPaid.toFixed(2)}</span>
+                  </div>
+                  <table className="invoice-table" style={{ margin: 0, border: 'none' }}>
+                    <thead>
+                      <tr style={{ backgroundColor: '#F8F9FA' }}>
+                        <th style={{ width: '25%', fontSize: '10px', textTransform: 'uppercase', padding: '8px 12px' }}>Date</th>
+                        <th style={{ width: '50%', fontSize: '10px', textTransform: 'uppercase', padding: '8px 12px' }}>Particulars</th>
+                        <th style={{ width: '25%', fontSize: '10px', textTransform: 'uppercase', padding: '8px 12px', textAlign: 'right' }}>Amount (₹)</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {ledger.filter(e => e.type === 'Receipt').map((entry) => (
+                        <tr key={entry.id}>
+                          <td style={{ padding: '8px 12px', fontSize: '12px', borderBottom: '1px solid #F3F4F6' }}>{entry.displayDate}</td>
+                          <td style={{ padding: '8px 12px', fontSize: '12px', borderBottom: '1px solid #F3F4F6' }}>{entry.particulars}</td>
+                          <td style={{ padding: '8px 12px', fontSize: '12px', borderBottom: '1px solid #F3F4F6', textAlign: 'right', fontWeight: '600', color: '#059669' }}>{entry.credit.toFixed(2)}</td>
+                        </tr>
+                      ))}
+                      {ledger.filter(e => e.type === 'Receipt').length === 0 && (
+                        <tr>
+                          <td colSpan={3} style={{ padding: '20px', textAlign: 'center', fontSize: '12px', color: '#8F90A6' }}>No receipts found.</td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Right Column: Invoices & Debits (DR) */}
+                <div style={{ flex: 1, border: '1px solid #E4E4EB', borderRadius: '8px', overflow: 'hidden' }}>
+                  <div style={{ padding: '12px 15px', backgroundColor: '#FEF2F2', borderBottom: '1px solid #E4E4EB', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: '13px', fontWeight: '700', color: '#991B1B', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Invoices & Debits (Debit / DR)</span>
+                    <span style={{ fontSize: '13px', fontWeight: '800', color: '#991B1B' }}>₹ {(opening + totalDR).toFixed(2)}</span>
+                  </div>
+                  <table className="invoice-table" style={{ margin: 0, border: 'none' }}>
+                    <thead>
+                      <tr style={{ backgroundColor: '#F8F9FA' }}>
+                        <th style={{ width: '25%', fontSize: '10px', textTransform: 'uppercase', padding: '8px 12px' }}>Date</th>
+                        <th style={{ width: '50%', fontSize: '10px', textTransform: 'uppercase', padding: '8px 12px' }}>Particulars</th>
+                        <th style={{ width: '25%', fontSize: '10px', textTransform: 'uppercase', padding: '8px 12px', textAlign: 'right' }}>Amount (₹)</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {opening > 0 && (
+                        <tr>
+                          <td style={{ padding: '8px 12px', fontSize: '12px', borderBottom: '1px solid #F3F4F6' }}>—</td>
+                          <td style={{ padding: '8px 12px', fontSize: '12px', borderBottom: '1px solid #F3F4F6', fontWeight: '600' }}>Opening Balance</td>
+                          <td style={{ padding: '8px 12px', fontSize: '12px', borderBottom: '1px solid #F3F4F6', textAlign: 'right', fontWeight: '600', color: '#DC2626' }}>{opening.toFixed(2)}</td>
+                        </tr>
+                      )}
+                      {ledger.filter(e => e.type === 'Invoice').map((entry) => (
+                        <tr key={entry.id}>
+                          <td style={{ padding: '8px 12px', fontSize: '12px', borderBottom: '1px solid #F3F4F6' }}>{entry.displayDate}</td>
+                          <td style={{ padding: '8px 12px', fontSize: '12px', borderBottom: '1px solid #F3F4F6' }}>{entry.particulars}</td>
+                          <td style={{ padding: '8px 12px', fontSize: '12px', borderBottom: '1px solid #F3F4F6', textAlign: 'right', fontWeight: '600', color: '#DC2626' }}>{entry.debit.toFixed(2)}</td>
+                        </tr>
+                      ))}
+                      {opening === 0 && ledger.filter(e => e.type === 'Invoice').length === 0 && (
+                        <tr>
+                          <td colSpan={3} style={{ padding: '20px', textAlign: 'center', fontSize: '12px', color: '#8F90A6' }}>No invoices or debits found.</td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Reconciled Balance Row */}
+              <div style={{ padding: '15px 20px', backgroundColor: '#FFFBEB', border: '1px solid #FEF3C7', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <div style={{ fontSize: '13px', fontWeight: '700', color: '#92400E' }}>Net Outstanding Balance</div>
+                  <div style={{ fontSize: '11px', color: '#B45309', marginTop: '2px' }}>Total Debits minus Total Receipts</div>
+                </div>
+                <div style={{ fontSize: '18px', fontWeight: '900', color: closingBalance > 0 ? '#DC2626' : closingBalance < 0 ? '#059669' : '#1C1C28' }}>
+                  ₹ {Math.abs(closingBalance).toFixed(2)} {closingBalance > 0 ? 'Debit (Owes Us)' : closingBalance < 0 ? 'Credit (Advance)' : 'Settled'}
+                </div>
+              </div>
+            </div>
+          )}
           
           <div style={{ marginTop: '60px', textAlign: 'center', fontSize: '11px', color: '#888' }}>
             This is a computer generated statement and requires no signature.

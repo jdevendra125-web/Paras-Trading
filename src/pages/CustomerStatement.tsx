@@ -17,6 +17,7 @@ export function CustomerStatement() {
   const [invoices, setInvoices] = useState<InvoiceData[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [settings, setSettings] = useState<UserSettings | null>(null);
+  const [viewMode, setViewMode] = useState<'standard' | 'split'>('standard');
 
   useEffect(() => {
     Promise.all([getCustomers(), getInvoices(), getTransactions(), getSettings()]).then(([custs, invs, txns, sets]) => {
@@ -114,8 +115,8 @@ export function CustomerStatement() {
       {!loading && (
         <div className="grid grid-cols-3 gap-2 mb-4">
           {[
-            { label: 'Billed', value: formatCurrency(opening + totalBilled + totalDR), color: 'text-accent-blue' },
-            { label: 'Paid', value: formatCurrency(totalPaid), color: 'text-neon-green' },
+            { label: 'Billed (DR)', value: formatCurrency(opening + totalBilled + totalDR), color: 'text-accent-blue' },
+            { label: 'Paid (CR)', value: formatCurrency(totalPaid), color: 'text-neon-green' },
             { label: 'Balance', value: formatCurrency(balance), color: balance > 0 ? 'text-warning' : 'text-neon-green' },
           ].map(s => (
             <div key={s.label} className="glass-card p-3 text-center">
@@ -126,7 +127,27 @@ export function CustomerStatement() {
         </div>
       )}
 
-      {loading ? <TableSkeleton rows={6} /> : (
+      {/* View Mode Toggle Switch */}
+      {!loading && (
+        <div className="flex gap-2 mb-4 bg-bg-secondary p-1 rounded-2xl max-w-md mx-auto print:hidden">
+          <button 
+            onClick={() => setViewMode('standard')} 
+            className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all ${viewMode === 'standard' ? 'bg-accent-red text-white shadow-glow-red' : 'text-slate-400 hover:text-white'}`}
+          >
+            Standard Statement
+          </button>
+          <button 
+            onClick={() => setViewMode('split')} 
+            className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all ${viewMode === 'split' ? 'bg-accent-red text-white shadow-glow-red' : 'text-slate-400 hover:text-white'}`}
+          >
+            Side-by-Side Ledger
+          </button>
+        </div>
+      )}
+
+      {loading ? (
+        <TableSkeleton rows={6} />
+      ) : viewMode === 'standard' ? (
         <div className="glass-card overflow-hidden">
           <div className="grid grid-cols-4 px-4 py-2 bg-white/[0.02] border-b border-white/[0.06]">
             {['Date', 'Description', 'Debit', 'Credit'].map(h => (
@@ -141,6 +162,89 @@ export function CustomerStatement() {
               <p className="text-xs amount text-neon-green">{e.credit > 0 ? formatCurrency(e.credit) : '-'}</p>
             </div>
           ))}
+        </div>
+      ) : (
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 print:grid-cols-2 gap-4">
+            {/* Left Column: Receipts (CR) */}
+            <div className="glass-card overflow-hidden">
+              <div className="px-4 py-3 bg-white/[0.02] border-b border-white/[0.06] flex items-center justify-between">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-neon-green">Receipts (Credit / CR)</h3>
+                <span className="text-xs font-mono font-bold text-neon-green">{formatCurrency(totalPaid)}</span>
+              </div>
+              <div className="grid grid-cols-3 px-4 py-2 bg-white/[0.01] border-b border-white/[0.04]">
+                {['Date', 'Particulars', 'Amount'].map(h => (
+                  <p key={h} className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">{h}</p>
+                ))}
+              </div>
+              <div className="divide-y divide-white/[0.03]">
+                {transactions.filter(t => t.type === 'CR').map((t, idx) => (
+                  <div key={idx} className="grid grid-cols-3 px-4 py-2.5 items-center">
+                    <p className="text-xs text-slate-500">{formatDateShort(t.date)}</p>
+                    <p className="text-xs text-content-primary truncate pr-2">{t.particulars || 'Payment received'}</p>
+                    <p className="text-xs amount text-neon-green font-bold">{formatCurrency(t.amount)}</p>
+                  </div>
+                ))}
+                {transactions.filter(t => t.type === 'CR').length === 0 && (
+                  <div className="px-4 py-8 text-center text-xs text-slate-500">No receipts logged</div>
+                )}
+              </div>
+            </div>
+
+            {/* Right Column: Invoices & Debits (DR) */}
+            <div className="glass-card overflow-hidden">
+              <div className="px-4 py-3 bg-white/[0.02] border-b border-white/[0.06] flex items-center justify-between">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-neon-red">Invoices & Debits (Debit / DR)</h3>
+                <span className="text-xs font-mono font-bold text-neon-red">{formatCurrency(opening + totalBilled + totalDR)}</span>
+              </div>
+              <div className="grid grid-cols-3 px-4 py-2 bg-white/[0.01] border-b border-white/[0.04]">
+                {['Date', 'Particulars', 'Amount'].map(h => (
+                  <p key={h} className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">{h}</p>
+                ))}
+              </div>
+              <div className="divide-y divide-white/[0.03]">
+                {opening > 0 && (
+                  <div className="grid grid-cols-3 px-4 py-2.5 items-center">
+                    <p className="text-xs text-slate-500">—</p>
+                    <p className="text-xs text-content-primary truncate pr-2">Opening Balance</p>
+                    <p className="text-xs amount text-neon-red font-bold">{formatCurrency(opening)}</p>
+                  </div>
+                )}
+                {invoices.map((inv, idx) => (
+                  <div key={`inv-${idx}`} className="grid grid-cols-3 px-4 py-2.5 items-center">
+                    <p className="text-xs text-slate-500">{formatDateShort(inv.dateOfSupply)}</p>
+                    <p className="text-xs text-content-primary truncate pr-2">Invoice {inv.invoiceNo}</p>
+                    <p className="text-xs amount text-neon-red font-bold">{formatCurrency(inv.totalAmount || 0)}</p>
+                  </div>
+                ))}
+                {transactions.filter(t => t.type === 'DR').map((t, idx) => (
+                  <div key={`dr-${idx}`} className="grid grid-cols-3 px-4 py-2.5 items-center">
+                    <p className="text-xs text-slate-500">{formatDateShort(t.date)}</p>
+                    <p className="text-xs text-content-primary truncate pr-2">{t.particulars || 'Debit charge'}</p>
+                    <p className="text-xs amount text-neon-red font-bold">{formatCurrency(t.amount)}</p>
+                  </div>
+                ))}
+                {opening === 0 && invoices.length === 0 && transactions.filter(t => t.type === 'DR').length === 0 && (
+                  <div className="px-4 py-8 text-center text-xs text-slate-500">No invoices or charges logged</div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Reconciled Balance Row */}
+          <div className="glass-card p-4 border border-warning/15">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-semibold text-slate-400">Net Outstanding Balance</p>
+                <p className="text-xs text-slate-500 mt-0.5">Total Debits minus Total Receipts</p>
+              </div>
+              <div className="text-right">
+                <p className={`text-lg font-black amount ${balance > 0 ? 'text-warning' : 'text-neon-green'}`}>
+                  {formatCurrency(Math.abs(balance))} {balance > 0 ? 'Debit (Owes Us)' : balance < 0 ? 'Credit (Advance)' : 'Settled'}
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>
