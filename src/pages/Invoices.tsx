@@ -106,7 +106,7 @@ export function Invoices() {
                         <button onClick={() => navigate(`/edit/${encodeURIComponent(inv.invoiceNo)}`)} title="Edit Invoice" className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center text-slate-400 hover:text-content-primary hover:bg-white/10 transition-colors"><Pencil size={14} /></button>
                         <button 
                           onClick={() => {
-                            const { invoiceNo, dateOfSupply, ...rest } = inv;
+                            const { invoiceNo, dateOfSupply, totalAmount, ...rest } = inv;
                             const items = inv.items.map(item => ({ ...item, id: crypto.randomUUID() }));
                             navigate('/new', { state: { prefill: { ...rest, items } } });
                           }} 
@@ -142,7 +142,7 @@ export function Invoices() {
                   <button onClick={() => navigate(`/edit/${encodeURIComponent(inv.invoiceNo)}`)} className="w-7 h-7 rounded-lg bg-white/5 flex items-center justify-center text-slate-400 hover:text-content-primary hover:bg-white/10" title="Edit Invoice"><Pencil size={13} /></button>
                   <button 
                     onClick={() => {
-                      const { invoiceNo, dateOfSupply, ...rest } = inv;
+                      const { invoiceNo, dateOfSupply, totalAmount, ...rest } = inv;
                       const items = inv.items.map(item => ({ ...item, id: crypto.randomUUID() }));
                       navigate('/new', { state: { prefill: { ...rest, items } } });
                     }} 

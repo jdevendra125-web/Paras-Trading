@@ -62,7 +62,7 @@ export const saveInvoice = async (invoice: InvoiceData): Promise<void> => {
     other_charges: Number(invoice.otherCharges) || 0,
     hamali: Number(invoice.hamali) || 0,
     items_json: sanitizedItems,
-    total_amount: invoice.totalAmount || calculatedTotal,
+    total_amount: calculatedTotal,
     reportable: invoice.reportable || false,
     receiver_phone: invoice.receiverPhone,
     receiver_email: invoice.receiverEmail
