@@ -13,7 +13,7 @@ import type { Transaction, BankAccount, Customer } from '../types';
 const TYPE_OPTS = [{ value: 'CR', label: 'Credit (Received)' }, { value: 'DR', label: 'Debit (Paid)' }];
 const MODE_OPTS = [{ value: 'Bank', label: 'Bank' }, { value: 'Cash', label: 'Cash' }];
 
-const emptyForm = () => ({ date: todayISO(), amount: '', type: 'CR', mode: 'Cash', bankAccountId: '', customerId: '', particulars: '', refNo: '' });
+const emptyForm = () => ({ date: '', amount: '', type: 'CR', mode: 'Cash', bankAccountId: '', customerId: '', particulars: '', refNo: '' });
 
 interface DateTextInputProps {
   label: string;
@@ -155,6 +155,10 @@ export function Receipts() {
   };
 
   const handleSave = async () => {
+    if (!form.date) {
+      alert('Please enter or select a Date.');
+      return;
+    }
     if (!form.amount) {
       alert('Please enter an amount.');
       return;
