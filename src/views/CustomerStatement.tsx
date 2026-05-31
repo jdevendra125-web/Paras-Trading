@@ -170,6 +170,8 @@ export function CustomerStatement() {
   if (loading) return <div>Loading...</div>;
   if (!customer) return <div>Customer not found</div>;
 
+  const opening = Number(customer?.openingBalance) || 0;
+
   return (
     <div>
       <div className="header mb-4 print-hidden" style={{ position: 'relative', border: 'none', padding: 0, backgroundColor: 'transparent', boxShadow: 'none' }}>
