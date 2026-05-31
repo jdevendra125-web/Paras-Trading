@@ -211,9 +211,9 @@ export const addCustomer = async (customer: Omit<Customer, 'id'>): Promise<void>
   const { error } = await supabase.from('customers').insert({
     name: customer.name,
     address: customer.address,
-    state: customer.state,
-    state_code: customer.stateCode,
-    gstin: customer.gstin,
+    state: customer.state || '',
+    state_code: customer.stateCode || '',
+    gstin: customer.gstin || '',
     region: customer.region,
     phone: customer.phone,
     email: customer.email,

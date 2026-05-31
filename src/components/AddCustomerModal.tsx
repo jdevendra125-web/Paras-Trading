@@ -79,11 +79,11 @@ export function AddCustomerModal({ onClose, onSuccess }: AddCustomerModalProps) 
             <div className="form-row mt-4">
               <div className="form-col">
                 <label className="form-label">State</label>
-                <input required type="text" className="form-control" name="state" value={formData.state} onChange={handleChange} />
+                <input type="text" className="form-control" name="state" value={formData.state} onChange={handleChange} />
               </div>
               <div className="form-col">
                 <label className="form-label">State Code</label>
-                <input required type="text" className="form-control" name="stateCode" value={formData.stateCode} onChange={handleChange} />
+                <input type="text" className="form-control" name="stateCode" value={formData.stateCode} onChange={handleChange} />
               </div>
               <div className="form-col">
                 <label className="form-label">GSTIN</label>

@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Trash2, ChevronDown, ChevronUp, Save } from 'lucide-react';
+import { Plus, Trash2, ChevronDown, ChevronUp, Save, Calendar } from 'lucide-react';
 import { PageHeader } from '../../components/layout/PageHeader';
 import { Input, Select } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
@@ -16,6 +16,106 @@ const TRANSPORT_OPTS = ['Private', 'GVK', 'Jain Transport', 'Other'].map(v => ({
 const MODE_OPTS = ['By Road', 'By Rail', 'By Air', 'By Ship'].map(v => ({ value: v, label: v }));
 
 const NUMERIC_KEYS: Array<keyof InvoiceData> = ['loadingCharges', 'transportCharges', 'otherCharges', 'hamali'];
+
+interface DateTextInputProps {
+  label: string;
+  value: string;
+  onChange: (isoValue: string) => void;
+  placeholder?: string;
+  className?: string;
+}
+
+function DateTextInput({ label, value, onChange, placeholder = "DD-MM-YYYY", className = "" }: DateTextInputProps) {
+  const toDisplay = (iso: string): string => {
+    if (!iso) return "";
+    const parts = iso.split("-");
+    if (parts.length === 3 && parts[0].length === 4) {
+      return `${parts[2]}-${parts[1]}-${parts[0]}`;
+    }
+    return iso;
+  };
+
+  const [inputValue, setInputValue] = useState(toDisplay(value));
+  const hiddenInputRef = React.useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    setInputValue(toDisplay(value));
+  }, [value]);
+
+  const handleTextChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    const cleaned = val.replace(/\D/g, "").slice(0, 8);
+    let formatted = cleaned;
+    if (cleaned.length > 2 && cleaned.length <= 4) {
+      formatted = `${cleaned.slice(0, 2)}-${cleaned.slice(2)}`;
+    } else if (cleaned.length > 4) {
+      formatted = `${cleaned.slice(0, 2)}-${cleaned.slice(2, 4)}-${cleaned.slice(4)}`;
+    }
+    
+    setInputValue(formatted);
+
+    if (formatted.length === 10) {
+      const [d, m, y] = formatted.split("-");
+      const day = parseInt(d, 10);
+      const month = parseInt(m, 10);
+      const year = parseInt(y, 10);
+      if (day >= 1 && day <= 31 && month >= 1 && month <= 12 && year >= 1000 && year <= 9999) {
+        onChange(`${y}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`);
+      }
+    } else if (formatted === "") {
+      onChange("");
+    }
+  };
+
+  const handleBlur = () => {
+    if (inputValue.length < 10 && inputValue !== "") {
+      setInputValue(toDisplay(value));
+    }
+  };
+
+  const handleIconClick = () => {
+    if (hiddenInputRef.current) {
+      try {
+        if ('showPicker' in HTMLInputElement.prototype) {
+          hiddenInputRef.current.showPicker();
+        } else {
+          hiddenInputRef.current.click();
+        }
+      } catch (err) {
+        hiddenInputRef.current.click();
+      }
+    }
+  };
+
+  return (
+    <div className="relative w-full">
+      <Input
+        label={label}
+        type="text"
+        value={inputValue}
+        onChange={handleTextChange}
+        onBlur={handleBlur}
+        placeholder={placeholder}
+        className={className}
+        maxLength={10}
+        suffix={
+          <Calendar 
+            size={16} 
+            className="text-slate-400 cursor-pointer hover:text-white transition-colors"
+            onClick={handleIconClick} 
+          />
+        }
+      />
+      <input
+        ref={hiddenInputRef}
+        type="date"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="absolute top-0 right-0 w-0 h-0 opacity-0 pointer-events-none"
+      />
+    </div>
+  );
+}
 
 interface Props {
   data: InvoiceData;
@@ -130,7 +230,7 @@ export function InvoiceForm({ data, onChange, onGenerate, defaultsLoading = fals
       <div className="glass-card p-4 mb-3">
         <div className="grid grid-cols-2 gap-3">
           <Input label="Invoice No" value={data.invoiceNo} onChange={set('invoiceNo')} />
-          <Input label="Date of Supply" type="date" value={data.dateOfSupply} onChange={(e) => { set('dateOfSupply')(e); e.target.blur(); }} />
+          <DateTextInput label="Date of Supply" value={data.dateOfSupply} onChange={(val) => onChange({ ...data, dateOfSupply: val })} />
         </div>
       </div>
 
@@ -213,7 +313,7 @@ export function InvoiceForm({ data, onChange, onGenerate, defaultsLoading = fals
               <div className="space-y-3 pt-1">
                 <div className="grid grid-cols-2 gap-3">
                   <Input label="PO No" value={data.poNo} onChange={set('poNo')} placeholder="PO number" />
-                  <Input label="PO Date" type="date" value={data.poDate} onChange={(e) => { set('poDate')(e); e.target.blur(); }} />
+                  <DateTextInput label="PO Date" value={data.poDate || ''} onChange={(val) => onChange({ ...data, poDate: val })} />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <Input label="Vehicle No" value={data.vehicleNo} onChange={set('vehicleNo')} placeholder="MH-12-AB-1234" className="uppercase" />

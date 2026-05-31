@@ -9,6 +9,7 @@ CREATE TABLE customers (
   state_code TEXT NOT NULL,
   gstin TEXT NOT NULL,
   region TEXT,
+  opening_balance NUMERIC DEFAULT 0,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 

@@ -62,7 +62,7 @@ export function AddCustomerModal({ open, onClose, onSaved, editing }: Props) {
   };
 
   const handleSave = async () => {
-    if (!form.name.trim() || !form.state || !form.gstin.trim()) { setError('Name, State and GSTIN are required'); return; }
+    if (!form.name.trim()) { setError('Customer Name is required'); return; }
     setLoading(true); setError('');
     try {
       const payload = { ...form, openingBalance: Number(form.openingBalance) || 0 };
@@ -91,10 +91,10 @@ export function AddCustomerModal({ open, onClose, onSaved, editing }: Props) {
         <Input label="Customer Name *" value={form.name} onChange={set('name')} placeholder="Bajrang Supermarket" />
         <Input label="Address *" value={form.address} onChange={set('address')} placeholder="Shop address..." />
         <div className="grid grid-cols-2 gap-3">
-          <Select label="State *" value={form.state} onChange={set('state')} options={STATES} />
+          <Select label="State" value={form.state} onChange={set('state')} options={STATES} />
           <Input label="State Code" value={form.stateCode} onChange={set('stateCode')} placeholder="27" />
         </div>
-        <Input label="GSTIN *" value={form.gstin} onChange={set('gstin')} placeholder="27AAGHJ5402D1ZN" className="uppercase" />
+        <Input label="GSTIN" value={form.gstin} onChange={set('gstin')} placeholder="27AAGHJ5402D1ZN" className="uppercase" />
         <div className="grid grid-cols-2 gap-3">
           <Input label="Region" value={form.region} onChange={set('region')} placeholder="North / South" />
           <Input label="Phone" value={form.phone} onChange={set('phone')} type="tel" placeholder="9876543210" />
