@@ -122,7 +122,7 @@
   }
 
   .amount {
-    @apply font-mono tracking-tight;
+    @apply font-sans tracking-tight;
   }
 
   .input-label {
