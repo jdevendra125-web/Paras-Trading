@@ -114,3 +114,17 @@ export interface UserSettings {
   invoiceFormat?: 'goods' | 'service';
   enableHamali?: boolean;
 }
+
+export interface AIParseResult {
+  type: 'invoice' | 'receipt';
+  invoiceData?: Partial<InvoiceData>;
+  receiptData?: {
+    date: string;
+    amount: number;
+    type: 'CR' | 'DR';
+    mode: 'Bank' | 'Cash';
+    customerId: string;
+    particulars: string;
+    refNo: string;
+  };
+}

@@ -1,14 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Mic, Send, Sparkles, AlertCircle } from 'lucide-react';
 import { Modal } from './Modal';
-import { parseInvoiceInput } from '../../lib/ai';
+import { parseAIInput } from '../../lib/ai';
 import { getCustomers, getMasterItems } from '../../lib/storage';
-import type { Customer, MasterItem, InvoiceData } from '../../types';
+import type { Customer, MasterItem, AIParseResult } from '../../types';
 
 interface Props {
   open: boolean;
   onClose: () => void;
-  onResult: (data: Partial<InvoiceData>) => void;
+  onResult: (result: AIParseResult) => void;
 }
 
 export function AIAssistantModal({ open, onClose, onResult }: Props) {
@@ -82,11 +82,14 @@ export function AIAssistantModal({ open, onClose, onResult }: Props) {
     setError('');
     
     try {
-      const data = await parseInvoiceInput(text, customers, items);
-      if (!data.items || data.items.length === 0) {
-        throw new Error("Couldn't find any items in your request. Please be specific, e.g. '10 bags of jaggery'.");
+      const result = await parseAIInput(text, customers, items);
+      if (result.type === 'invoice' && (!result.invoiceData?.items || result.invoiceData.items.length === 0)) {
+        throw new Error("Couldn't find any items in your request. Please be specific, e.g. '10 bags of sugar at 500'.");
       }
-      onResult(data);
+      if (result.type === 'receipt' && (!result.receiptData?.amount || result.receiptData.amount <= 0)) {
+        throw new Error("Couldn't find a valid amount in your request. Please be specific, e.g. 'received 5000 from Devendra'.");
+      }
+      onResult(result);
       onClose();
     } catch (err: any) {
       setError(err.message || 'Failed to understand request');
@@ -103,10 +106,11 @@ export function AIAssistantModal({ open, onClose, onResult }: Props) {
             <div className="w-16 h-16 rounded-full bg-accent-blue/10 flex items-center justify-center mb-4">
               <Sparkles size={28} className="text-accent-blue" />
             </div>
-            <h3 className="text-base font-bold text-content-primary mb-1">Local Invoice Parser</h3>
-            <p className="text-xs text-content-secondary max-w-[250px]">
-              Type or speak your request.<br/>
-              <span className="opacity-75 italic text-[11px]">"Invoice for John for 5 bags of sugar at 500"</span>
+            <h3 className="text-base font-bold text-content-primary mb-1">Local Business Assistant</h3>
+            <p className="text-xs text-content-secondary max-w-[280px]">
+              Type or speak to prepare bills or pass receipts:<br/>
+              <span className="opacity-75 italic text-[11px]">"Invoice to John: 5 bags sugar @ 500"</span><br/>
+              <span className="opacity-75 italic text-[11px]">"Pass receipt of 5000 from Alice via GPay today"</span>
             </p>
           </div>
           

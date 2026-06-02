@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Plus, ArrowUpDown, Banknote, Search, Pencil, Trash2, Download, Calendar, Copy } from 'lucide-react';
+import { Plus, ArrowUpDown, Banknote, Search, Pencil, Trash2, Download, Calendar, Copy, Sparkles } from 'lucide-react';
 import { PageHeader } from '../components/layout/PageHeader';
 import { TableSkeleton } from '../components/ui/Skeleton';
 import { Modal, ConfirmDialog } from '../components/ui/Modal';
 import { Input, Select } from '../components/ui/Input';
 import { Button } from '../components/ui/Button';
+import { AIAssistantModal } from '../components/ui/AIAssistantModal';
 import { getTransactions, getBankAccounts, getCustomers, addTransaction, updateTransaction, deleteTransaction } from '../lib/storage';
 import { formatCurrency, formatDateShort, todayISO } from '../lib/utils';
 import type { Transaction, BankAccount, Customer } from '../types';
@@ -112,8 +114,11 @@ export function Receipts() {
   const [editing, setEditing] = useState<Transaction | null>(null);
   const [form, setForm] = useState(emptyForm());
   const [saving, setSaving] = useState(false);
+  const navigate = useNavigate();
+  const location = useLocation();
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [search, setSearch] = useState('');
+  const [showAIModal, setShowAIModal] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -121,6 +126,44 @@ export function Receipts() {
     setTxns(t); setAccounts(a); setCustomers(c); setLoading(false);
   };
   useEffect(() => { load(); }, []);
+
+  useEffect(() => {
+    if (location.state?.prefill && customers.length > 0) {
+      const prefill = location.state.prefill;
+      setEditing(null);
+      setForm({
+        date: prefill.date || todayISO(),
+        amount: prefill.amount ? String(prefill.amount) : '',
+        type: prefill.type || 'CR',
+        mode: prefill.mode || 'Cash',
+        bankAccountId: prefill.bankAccountId || '',
+        customerId: prefill.customerId || '',
+        particulars: prefill.particulars || '',
+        refNo: prefill.refNo || ''
+      });
+      setShowForm(true);
+      navigate(location.pathname, { replace: true, state: null });
+    }
+  }, [location.state, customers]);
+
+  const handleAIResult = (result: any) => {
+    if (result.type === 'invoice') {
+      navigate('/new', { state: { prefill: result.invoiceData } });
+    } else if (result.type === 'receipt') {
+      setEditing(null);
+      setForm({
+        date: result.receiptData.date || todayISO(),
+        amount: result.receiptData.amount ? String(result.receiptData.amount) : '',
+        type: result.receiptData.type || 'CR',
+        mode: result.receiptData.mode || 'Cash',
+        bankAccountId: result.receiptData.bankAccountId || '',
+        customerId: result.receiptData.customerId || '',
+        particulars: result.receiptData.particulars || '',
+        refNo: result.receiptData.refNo || ''
+      });
+      setShowForm(true);
+    }
+  };
 
   const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
     setForm(prev => ({ ...prev, [k]: e.target.value }));
@@ -267,7 +310,14 @@ export function Receipts() {
   return (
     <div className="page-container">
       <PageHeader title="Receipts" subtitle="Cash & bank entries" icon={<ArrowUpDown size={18} />}
-        action={<Button onClick={openAdd} size="md" icon={<Plus size={16} />} className="!rounded-2xl shadow-md font-bold">Add Receipt</Button>}
+        action={
+          <div className="flex gap-2">
+            <button onClick={() => setShowAIModal(true)} className="btn-secondary text-xs px-3 py-2 flex items-center gap-1.5 border border-accent-blue/20 text-accent-blue hover:bg-accent-blue/10 bg-accent-blue/5">
+              <Sparkles size={14} /> AI Build
+            </button>
+            <Button onClick={openAdd} size="md" icon={<Plus size={16} />} className="!rounded-2xl shadow-md font-bold">Add Receipt</Button>
+          </div>
+        }
       />
       <div className="grid grid-cols-2 gap-3 mb-4">
         <div className="glass-card p-3">
@@ -356,6 +406,7 @@ export function Receipts() {
         title="Delete Transaction"
         message="Delete this transaction? This cannot be undone."
       />
+      <AIAssistantModal open={showAIModal} onClose={() => setShowAIModal(false)} onResult={handleAIResult} />
     </div>
   );
 }

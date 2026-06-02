@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { getCustomers, addTransaction, getTransactions, updateTransaction, deleteTransaction, getBankAccounts } from '../lib/storage';
 import type { Customer, Transaction, BankAccount } from '../types';
-import { Save, Banknote, Trash2, Pencil } from 'lucide-react';
+import { Save, Banknote, Trash2, Pencil, Sparkles } from 'lucide-react';
 import Select from 'react-select';
+import { AIAssistantModal } from '../components/ui/AIAssistantModal';
 
 export function Receipts() {
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -10,6 +12,9 @@ export function Receipts() {
   const [history, setHistory] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [showAIModal, setShowAIModal] = useState(false);
   
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0],
@@ -20,6 +25,40 @@ export function Receipts() {
     mode: 'Cash', // Cash or Bank
     bankAccountId: ''
   });
+
+  useEffect(() => {
+    if (location.state?.prefill && customers.length > 0) {
+      const prefill = location.state.prefill;
+      setEditingId(null);
+      setFormData({
+        date: prefill.date || new Date().toISOString().split('T')[0],
+        amount: prefill.amount ? String(prefill.amount) : '',
+        type: prefill.type || 'CR',
+        mode: prefill.mode || 'Cash',
+        bankAccountId: prefill.bankAccountId || '',
+        customerId: prefill.customerId || '',
+        particulars: prefill.particulars || ''
+      });
+      navigate(location.pathname, { replace: true, state: null });
+    }
+  }, [location.state, customers]);
+
+  const handleAIResult = (result: any) => {
+    if (result.type === 'invoice') {
+      navigate('/new', { state: { prefill: result.invoiceData } });
+    } else if (result.type === 'receipt') {
+      setEditingId(null);
+      setFormData({
+        date: result.receiptData.date || new Date().toISOString().split('T')[0],
+        amount: result.receiptData.amount ? String(result.receiptData.amount) : '',
+        type: result.receiptData.type || 'CR',
+        mode: result.receiptData.mode || 'Cash',
+        bankAccountId: result.receiptData.bankAccountId || '',
+        customerId: result.receiptData.customerId || '',
+        particulars: result.receiptData.particulars || ''
+      });
+    }
+  };
 
   const fetchHistory = async () => {
     const txs = await getTransactions();
@@ -125,8 +164,11 @@ export function Receipts() {
 
   return (
     <div>
-      <div className="header mb-4" style={{ position: 'relative', border: 'none', padding: 0, backgroundColor: 'transparent', boxShadow: 'none' }}>
+      <div className="header mb-4" style={{ position: 'relative', border: 'none', padding: 0, backgroundColor: 'transparent', boxShadow: 'none', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <h1 className="header-title">Receipts & Payments</h1>
+        <button type="button" onClick={() => setShowAIModal(true)} className="btn btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', borderRadius: '8px', border: '1px solid rgba(37, 99, 235, 0.2)', backgroundColor: 'rgba(37, 99, 235, 0.05)', color: 'rgb(37, 99, 235)', padding: '6px 12px', fontWeight: 'bold', cursor: 'pointer' }}>
+          <Sparkles size={14} /> AI Build
+        </button>
       </div>
 
       <div className="card" style={{ maxWidth: '600px', margin: '0 auto' }}>
@@ -282,6 +324,7 @@ export function Receipts() {
         </div>
       </div>
       <div style={{ height: '80px' }} className="print-hidden"></div>
+      <AIAssistantModal open={showAIModal} onClose={() => setShowAIModal(false)} onResult={handleAIResult} />
     </div>
   );
 }

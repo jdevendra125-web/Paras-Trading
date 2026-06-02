@@ -36,8 +36,12 @@ export function Invoices() {
     finally { setDeleting(false); setDeleteTarget(null); }
   };
 
-  const handleAIResult = (data: Partial<InvoiceData>) => {
-    navigate('/new', { state: { prefill: data } });
+  const handleAIResult = (result: any) => {
+    if (result.type === 'invoice') {
+      navigate('/new', { state: { prefill: result.invoiceData } });
+    } else if (result.type === 'receipt') {
+      navigate('/receipts', { state: { prefill: result.receiptData } });
+    }
   };
 
   const totalAmount = useMemo(() => filtered.reduce((s, i) => s + (i.totalAmount || 0), 0), [filtered]);
