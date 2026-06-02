@@ -87,37 +87,43 @@ export const saveInvoice = async (invoice: InvoiceData): Promise<void> => {
 };
 
 export const getInvoices = async (): Promise<InvoiceData[]> => {
-  const { data, error } = await supabase.from('invoices').select('*').order('created_at', { ascending: false });
+  const { data, error } = await supabase
+    .from('invoices')
+    .select('*, customers(name, gstin, address, state, state_code)')
+    .order('created_at', { ascending: false });
   if (error) {
     console.error('Error fetching invoices from Supabase:', error);
     return [];
   }
   
-  return data.map(row => ({
-    invoiceNo: row.invoice_no,
-    dateOfSupply: row.date_of_supply,
-    poNo: row.po_no || '',
-    poDate: row.po_date || '',
-    vehicleNo: row.vehicle_no || '',
-    nameOfTransport: row.name_of_transport || '',
-    placeOfSupply: row.place_of_supply || '',
-    modeOfTransport: row.mode_of_transport || '',
-    customerId: row.customer_id,
-    receiverName: row.receiver_name,
-    receiverAddress: row.receiver_address,
-    receiverState: row.receiver_state,
-    receiverStateCode: row.receiver_state_code,
-    receiverGstin: row.receiver_gstin,
-    receiverPhone: row.receiver_phone,
-    receiverEmail: row.receiver_email,
-    loadingCharges: row.loading_charges,
-    transportCharges: row.transport_charges,
-    otherCharges: row.other_charges,
-    hamali: row.hamali,
-    items: row.items_json,
-    totalAmount: row.total_amount || calculateInvoiceTotal(row),
-    reportable: row.reportable
-  }));
+  return data.map(row => {
+    const cust = row.customers;
+    return {
+      invoiceNo: row.invoice_no,
+      dateOfSupply: row.date_of_supply,
+      poNo: row.po_no || '',
+      poDate: row.po_date || '',
+      vehicleNo: row.vehicle_no || '',
+      nameOfTransport: row.name_of_transport || '',
+      placeOfSupply: row.place_of_supply || '',
+      modeOfTransport: row.mode_of_transport || '',
+      customerId: row.customer_id,
+      receiverName: cust?.name || row.receiver_name,
+      receiverAddress: cust?.address || row.receiver_address,
+      receiverState: cust?.state || row.receiver_state,
+      receiverStateCode: cust?.state_code || row.receiver_state_code,
+      receiverGstin: cust?.gstin || row.receiver_gstin,
+      receiverPhone: row.receiver_phone,
+      receiverEmail: row.receiver_email,
+      loadingCharges: row.loading_charges,
+      transportCharges: row.transport_charges,
+      otherCharges: row.other_charges,
+      hamali: row.hamali,
+      items: row.items_json,
+      totalAmount: row.total_amount || calculateInvoiceTotal(row),
+      reportable: row.reportable
+    };
+  });
 };
 
 export const getLatestInvoiceNo = async (): Promise<string | null> => {
@@ -133,12 +139,17 @@ export const getLatestInvoiceNo = async (): Promise<string | null> => {
 };
 
 export const getInvoiceByNo = async (invoiceNo: string): Promise<InvoiceData | undefined> => {
-  const { data, error } = await supabase.from('invoices').select('*').eq('invoice_no', invoiceNo).single();
+  const { data, error } = await supabase
+    .from('invoices')
+    .select('*, customers(name, gstin, address, state, state_code)')
+    .eq('invoice_no', invoiceNo)
+    .single();
   if (error || !data) {
     console.error('Error fetching single invoice:', error);
     return undefined;
   }
   
+  const cust = data.customers;
   return {
     invoiceNo: data.invoice_no,
     dateOfSupply: data.date_of_supply,
@@ -149,11 +160,11 @@ export const getInvoiceByNo = async (invoiceNo: string): Promise<InvoiceData | u
     placeOfSupply: data.place_of_supply || '',
     modeOfTransport: data.mode_of_transport || '',
     customerId: data.customer_id,
-    receiverName: data.receiver_name,
-    receiverAddress: data.receiver_address,
-    receiverState: data.receiver_state,
-    receiverStateCode: data.receiver_state_code,
-    receiverGstin: data.receiver_gstin,
+    receiverName: cust?.name || data.receiver_name,
+    receiverAddress: cust?.address || data.receiver_address,
+    receiverState: cust?.state || data.receiver_state,
+    receiverStateCode: cust?.state_code || data.receiver_state_code,
+    receiverGstin: cust?.gstin || data.receiver_gstin,
     receiverPhone: data.receiver_phone,
     receiverEmail: data.receiver_email,
     loadingCharges: data.loading_charges,
@@ -236,6 +247,24 @@ export const updateCustomer = async (id: string, customer: Partial<Omit<Customer
 
   const { error } = await supabase.from('customers').update(updates).eq('id', id);
   if (error) throw error;
+
+  // Sync details to linked invoices
+  const invoiceUpdates: any = {};
+  if (customer.name !== undefined) invoiceUpdates.receiver_name = customer.name;
+  if (customer.address !== undefined) invoiceUpdates.receiver_address = customer.address;
+  if (customer.state !== undefined) invoiceUpdates.receiver_state = customer.state;
+  if (customer.stateCode !== undefined) invoiceUpdates.receiver_state_code = customer.stateCode;
+  if (customer.gstin !== undefined) invoiceUpdates.receiver_gstin = customer.gstin;
+
+  if (Object.keys(invoiceUpdates).length > 0) {
+    const { error: invError } = await supabase
+      .from('invoices')
+      .update(invoiceUpdates)
+      .eq('customer_id', id);
+    if (invError) {
+      console.error('Error synchronizing invoices with new customer details:', invError);
+    }
+  }
 };
 
 export const deleteCustomer = async (id: string): Promise<void> => {
