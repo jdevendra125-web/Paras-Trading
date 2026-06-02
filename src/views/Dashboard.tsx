@@ -1,11 +1,33 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getInvoices, getCustomers, getTransactions, getBankAccounts } from '../lib/storage';
-import type { InvoiceData, Transaction, BankAccount } from '../types';
-import { FileText, Plus, Users, IndianRupee, Banknote } from 'lucide-react';
+import type { InvoiceData, Transaction, BankAccount, Customer } from '../types';
+import { FileText, Plus, Users, IndianRupee, Banknote, ArrowUpRight } from 'lucide-react';
+
+interface DueBillItem {
+  invoiceNo: string;
+  dateOfSupply: string;
+  receiverName: string;
+  totalAmount: number;
+  outstanding: number;
+}
+
+const parseDateStr = (dateStr: string): number => {
+  if (!dateStr) return 0;
+  const parts = dateStr.split('-');
+  if (parts.length === 3) {
+    if (parts[0].length === 4) {
+      return new Date(`${parts[0]}-${parts[1]}-${parts[2]}T12:00:00`).getTime();
+    }
+    return new Date(`${parts[2]}-${parts[1]}-${parts[0]}T12:00:00`).getTime();
+  }
+  const parsed = Date.parse(dateStr);
+  return isNaN(parsed) ? 0 : parsed;
+};
 
 export function Dashboard() {
   const [invoices, setInvoices] = useState<InvoiceData[]>([]);
+  const [customers, setCustomers] = useState<Customer[]>([]);
   const [customerCount, setCustomerCount] = useState(0);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([]);
@@ -22,6 +44,7 @@ export function Dashboard() {
           getBankAccounts()
         ]);
         setInvoices(invData);
+        setCustomers(custData);
         setCustomerCount(custData.length);
         setTransactions(txData);
         setBankAccounts(bankData);
@@ -87,7 +110,103 @@ export function Dashboard() {
     }
   });
 
-  const recentInvoices = invoices.slice(0, 5);
+  // Calculate longest bills due
+  const longestDueBills = (() => {
+    if (loading) return [];
+    const allDueBills: DueBillItem[] = [];
+
+    customers.forEach(customer => {
+      const customerInvoices = invoices.filter(inv => inv.customerId === customer.id);
+      const customerTxns = transactions.filter(t => t.customerId === customer.id);
+      const customerTotalPaid = customerTxns.filter(t => t.type === 'CR').reduce((sum, t) => sum + t.amount, 0);
+
+      interface DebitItem {
+        invoiceNo: string;
+        dateOfSupply: string;
+        totalAmount: number;
+        outstanding: number;
+        type: 'opening_balance' | 'invoice' | 'debit_txn';
+        timestamp: number;
+      }
+
+      const items: DebitItem[] = [];
+
+      // 1. Opening Balance
+      const opening = Number(customer.openingBalance) || 0;
+      if (opening > 0) {
+        items.push({
+          invoiceNo: 'Opening Balance',
+          dateOfSupply: '—',
+          totalAmount: opening,
+          outstanding: 0,
+          type: 'opening_balance',
+          timestamp: 0,
+        });
+      }
+
+      // 2. Invoices
+      customerInvoices.forEach(b => {
+        items.push({
+          invoiceNo: b.invoiceNo,
+          dateOfSupply: b.dateOfSupply,
+          totalAmount: b.totalAmount || calculateTotal(b),
+          outstanding: 0,
+          type: 'invoice',
+          timestamp: parseDateStr(b.dateOfSupply),
+        });
+      });
+
+      // 3. DR transactions
+      customerTxns.filter(t => t.type === 'DR').forEach(t => {
+        items.push({
+          invoiceNo: t.particulars || 'Debit Entry',
+          dateOfSupply: t.date,
+          totalAmount: t.amount,
+          outstanding: 0,
+          type: 'debit_txn',
+          timestamp: parseDateStr(t.date),
+        });
+      });
+
+      // Sort chronologically (FIFO)
+      const sorted = items.sort((a, b) => {
+        if (a.timestamp === 0) return -1;
+        if (b.timestamp === 0) return 1;
+        return a.timestamp - b.timestamp;
+      });
+
+      // Distribute totalPaid sequentially (FIFO)
+      let remainingPaid = customerTotalPaid;
+      sorted.forEach(item => {
+        const amount = item.totalAmount;
+        let itemOutstanding = 0;
+        if (remainingPaid >= amount) {
+          remainingPaid -= amount;
+          itemOutstanding = 0;
+        } else if (remainingPaid > 0) {
+          itemOutstanding = amount - remainingPaid;
+          remainingPaid = 0;
+        } else {
+          itemOutstanding = amount;
+        }
+
+        if (itemOutstanding > 0.01 && item.type === 'invoice') {
+          allDueBills.push({
+            invoiceNo: item.invoiceNo,
+            dateOfSupply: item.dateOfSupply,
+            receiverName: customer.name,
+            totalAmount: item.totalAmount,
+            outstanding: itemOutstanding
+          });
+        }
+      });
+    });
+
+    // Sort all due invoices by oldest first (longest due)
+    return allDueBills
+      .sort((a, b) => parseDateStr(a.dateOfSupply) - parseDateStr(b.dateOfSupply))
+      .slice(0, 5);
+  })();
 
   return (
     <div style={{ paddingBottom: '2rem' }}>
@@ -178,31 +297,29 @@ export function Dashboard() {
             </div>
           </div>
 
-          {/* Recent Invoices */}
+          {/* Longest Due Bills */}
           <div className="flex justify-between items-center mb-3 px-1 mt-2">
-            <h3 className="text-sm font-bold text-muted uppercase">Recent Invoices</h3>
-            {invoices.length > 5 && (
-              <button className="text-primary text-xs font-bold border-none" style={{ background: 'none' }} onClick={() => navigate('/invoices')}>
-                See All
-              </button>
-            )}
+            <h3 className="text-sm font-bold text-muted uppercase">Longest Due Bills</h3>
+            <button className="text-danger text-xs font-bold border-none" style={{ background: 'none', display: 'flex', alignItems: 'center', gap: '2px' }} onClick={() => navigate('/outstandings')}>
+              View All Outstandings <ArrowUpRight size={14} />
+            </button>
           </div>
 
           <div className="card">
             <div className="card-body" style={{ padding: '0.5rem 1.25rem' }}>
-              {invoices.length === 0 ? (
+              {longestDueBills.length === 0 ? (
                 <div className="text-center py-4 text-muted">
-                  <p className="text-sm">No invoices found.</p>
+                  <p className="text-sm">No outstanding payments.</p>
                 </div>
               ) : (
-                recentInvoices.map((inv) => (
+                longestDueBills.map((inv) => (
                   <div 
                     key={inv.invoiceNo} 
                     className="list-row"
                     onClick={() => navigate(`/preview/${encodeURIComponent(inv.invoiceNo)}`)}
                   >
                     <div className="flex items-center gap-3">
-                      <div style={{ width: 36, height: 36, borderRadius: '8px', backgroundColor: '#F1F5F9', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <div style={{ width: 36, height: 36, borderRadius: '8px', backgroundColor: '#FEF2F2', color: '#EF4444', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         <FileText size={18} />
                       </div>
                       <div className="flex-col">
@@ -211,8 +328,8 @@ export function Dashboard() {
                       </div>
                     </div>
                     <div className="flex-col items-end text-right">
-                      <span className="font-bold text-sm">₹{calculateTotal(inv)}</span>
-                      <span className="text-xs text-muted">{inv.dateOfSupply}</span>
+                      <span className="font-bold text-sm text-danger">₹{inv.outstanding.toLocaleString('en-IN')}</span>
+                      <span className="text-[10px] text-muted">Total: ₹{inv.totalAmount.toLocaleString('en-IN')}</span>
                     </div>
                   </div>
                 ))

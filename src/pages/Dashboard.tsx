@@ -11,13 +11,21 @@ import { getInvoices, getCustomers, getTransactions, calculateInvoiceTotal, getS
 import { formatCurrency, formatDateShort } from '../lib/utils';
 import type { InvoiceData, Transaction, UserSettings } from '../types';
 
+interface DueBillItem {
+  invoiceNo: string;
+  dateOfSupply: string;
+  receiverName: string;
+  totalAmount: number;
+  outstanding: number;
+}
+
 interface Stats {
   totalRevenue: number;
   totalInvoices: number;
   totalCustomers: number;
   totalOutstanding: number;
   collectionRate: number;
-  recentInvoices: InvoiceData[];
+  longestDueBills: DueBillItem[];
   recentTxns: Transaction[];
 }
 
@@ -30,6 +38,19 @@ const statCards = (s: Stats) => [
 
 const container = { hidden: {}, show: { transition: { staggerChildren: 0.07 } } };
 const item = { hidden: { opacity: 0, y: 16 }, show: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 300, damping: 28 } as any } };
+
+const parseDateStr = (dateStr: string): number => {
+  if (!dateStr) return 0;
+  const parts = dateStr.split('-');
+  if (parts.length === 3) {
+    if (parts[0].length === 4) {
+      return new Date(`${parts[0]}-${parts[1]}-${parts[2]}T12:00:00`).getTime();
+    }
+    return new Date(`${parts[2]}-${parts[1]}-${parts[0]}T12:00:00`).getTime();
+  }
+  const parsed = Date.parse(dateStr);
+  return isNaN(parsed) ? 0 : parsed;
+};
 
 export function Dashboard() {
   const [stats, setStats] = useState<Stats | null>(null);
@@ -45,13 +66,108 @@ export function Dashboard() {
       const totalPaid = transactions.filter(t => t.type === 'CR').reduce((sum, t) => sum + t.amount, 0);
       const collectionRate = totalInvoiced > 0 ? (totalPaid / totalInvoiced) * 100 : 0;
       
+      // Calculate longest bills due
+      const allDueBills: DueBillItem[] = [];
+
+      customers.forEach(customer => {
+        const customerInvoices = invoices.filter(inv => inv.customerId === customer.id);
+        const customerTxns = transactions.filter(t => t.customerId === customer.id);
+        const customerTotalPaid = customerTxns.filter(t => t.type === 'CR').reduce((sum, t) => sum + t.amount, 0);
+
+        interface DebitItem {
+          invoiceNo: string;
+          dateOfSupply: string;
+          totalAmount: number;
+          outstanding: number;
+          type: 'opening_balance' | 'invoice' | 'debit_txn';
+          timestamp: number;
+        }
+
+        const items: DebitItem[] = [];
+
+        // 1. Opening Balance
+        const opening = Number(customer.openingBalance) || 0;
+        if (opening > 0) {
+          items.push({
+            invoiceNo: 'Opening Balance',
+            dateOfSupply: '—',
+            totalAmount: opening,
+            outstanding: 0,
+            type: 'opening_balance',
+            timestamp: 0,
+          });
+        }
+
+        // 2. Invoices
+        customerInvoices.forEach(b => {
+          items.push({
+            invoiceNo: b.invoiceNo,
+            dateOfSupply: b.dateOfSupply,
+            totalAmount: b.totalAmount || calculateInvoiceTotal(b),
+            outstanding: 0,
+            type: 'invoice',
+            timestamp: parseDateStr(b.dateOfSupply),
+          });
+        });
+
+        // 3. DR transactions
+        customerTxns.filter(t => t.type === 'DR').forEach(t => {
+          items.push({
+            invoiceNo: t.particulars || 'Debit Entry',
+            dateOfSupply: t.date,
+            totalAmount: t.amount,
+            outstanding: 0,
+            type: 'debit_txn',
+            timestamp: parseDateStr(t.date),
+          });
+        });
+
+        // Sort chronologically (FIFO)
+        const sorted = items.sort((a, b) => {
+          if (a.timestamp === 0) return -1;
+          if (b.timestamp === 0) return 1;
+          return a.timestamp - b.timestamp;
+        });
+
+        // Distribute totalPaid sequentially (FIFO)
+        let remainingPaid = customerTotalPaid;
+        sorted.forEach(item => {
+          const amount = item.totalAmount;
+          let itemOutstanding = 0;
+          if (remainingPaid >= amount) {
+            remainingPaid -= amount;
+            itemOutstanding = 0;
+          } else if (remainingPaid > 0) {
+            itemOutstanding = amount - remainingPaid;
+            remainingPaid = 0;
+          } else {
+            itemOutstanding = amount;
+          }
+
+          if (itemOutstanding > 0.01 && item.type === 'invoice') {
+            allDueBills.push({
+              invoiceNo: item.invoiceNo,
+              dateOfSupply: item.dateOfSupply,
+              receiverName: customer.name,
+              totalAmount: item.totalAmount,
+              outstanding: itemOutstanding
+            });
+          }
+        });
+      });
+
+      // Sort all due invoices by oldest first (longest due)
+      const longestDueBills = allDueBills
+        .sort((a, b) => parseDateStr(a.dateOfSupply) - parseDateStr(b.dateOfSupply))
+        .slice(0, 5);
+
       setStats({
         totalRevenue: totalInvoiced,
         totalInvoices: invoices.length,
         totalCustomers: customers.length,
         totalOutstanding: Math.max(0, totalInvoiced - totalPaid),
         collectionRate,
-        recentInvoices: invoices.slice(0, 5),
+        longestDueBills,
         recentTxns: transactions.slice(0, 5),
       });
       setLoading(false);
@@ -114,12 +230,12 @@ export function Dashboard() {
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Recent Invoices */}
+        {/* Longest Due Bills */}
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }} className="lg:col-span-2">
           <div className="flex items-center justify-between mb-4 px-2">
-            <h2 className="text-lg font-bold text-content-primary">Recent Bills</h2>
-            <Link to="/invoices" className="text-xs text-accent-red flex items-center gap-1 font-bold hover:underline">
-              View All Bills <ArrowUpRight size={14} />
+            <h2 className="text-lg font-bold text-content-primary">Longest Due Bills</h2>
+            <Link to="/outstandings" className="text-xs text-accent-red flex items-center gap-1 font-bold hover:underline">
+              View All Outstandings <ArrowUpRight size={14} />
             </Link>
           </div>
           <div className="bg-bg-card border border-content-primary/5 rounded-[2.5rem] overflow-hidden shadow-xl">
@@ -135,21 +251,20 @@ export function Dashboard() {
                   </div>
                 ))}
               </div>
-            ) : stats?.recentInvoices.length === 0 ? (
+            ) : stats?.longestDueBills.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-24 text-content-secondary">
                 <div className="w-20 h-20 rounded-full bg-accent-red/5 flex items-center justify-center mb-4">
                   <FileText size={32} className="opacity-20 text-accent-red" />
                 </div>
-                <p className="text-sm font-bold">Your ledger is empty</p>
-                <Link to="/new" className="text-xs text-accent-red mt-2 hover:underline font-bold">Record your first entry</Link>
+                <p className="text-sm font-bold">No outstanding payments</p>
+                <p className="text-xs text-slate-600 mt-1">All customers are up to date</p>
               </div>
-            ) : stats?.recentInvoices.map((inv, idx) => {
-              const isPaid = (stats.recentTxns.filter(t => t.customerId === inv.customerId && t.type === 'CR').reduce((s, t) => s + t.amount, 0)) >= (inv.totalAmount || 0);
+            ) : stats?.longestDueBills.map((inv, idx) => {
               return (
               <Link
                 key={inv.invoiceNo}
                 to={`/preview/${encodeURIComponent(inv.invoiceNo)}`}
-                className={`flex items-center gap-4 px-6 py-5 hover:bg-accent-red/[0.02] transition-colors ${idx < (stats.recentInvoices.length - 1) ? 'border-b border-content-primary/[0.04]' : ''}`}
+                className={`flex items-center gap-4 px-6 py-5 hover:bg-accent-red/[0.02] transition-colors ${idx < (stats.longestDueBills.length - 1) ? 'border-b border-content-primary/[0.04]' : ''}`}
               >
                 <div className="w-12 h-12 rounded-2xl bg-accent-red/10 border border-accent-red/20 flex items-center justify-center flex-shrink-0">
                   <FileText size={20} className="text-accent-red" />
@@ -159,11 +274,11 @@ export function Dashboard() {
                   <p className="text-xs text-content-muted font-bold tracking-tight uppercase mt-0.5">{inv.invoiceNo} · {formatDateShort(inv.dateOfSupply)}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-base font-bold amount text-success">
-                    {formatCurrency(inv.totalAmount || 0)}
+                  <p className="text-base font-bold amount text-danger">
+                    {formatCurrency(inv.outstanding)}
                   </p>
-                  <p className={`text-[10px] uppercase font-bold tracking-widest mt-0.5 ${isPaid ? 'text-success' : 'text-accent-red'}`}>
-                    {isPaid ? 'Paid' : 'Pending'}
+                  <p className="text-[10px] text-content-muted font-bold mt-0.5">
+                    Total: {formatCurrency(inv.totalAmount)}
                   </p>
                 </div>
               </Link>
