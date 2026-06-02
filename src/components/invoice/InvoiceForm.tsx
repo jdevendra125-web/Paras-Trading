@@ -114,7 +114,7 @@ interface Props {
   autoFocusDate?: boolean;
 }
 
-export function InvoiceForm({ data, onChange, onGenerate, onSaveAndNew, defaultsLoading = false }: Props) {
+export function InvoiceForm({ data, onChange, onGenerate, onSaveAndNew, defaultsLoading = false, autoFocusDate }: Props) {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [masterItems, setMasterItems] = useState<MasterItem[]>([]);
   const [settings, setSettings] = useState<UserSettings | null>(null);
