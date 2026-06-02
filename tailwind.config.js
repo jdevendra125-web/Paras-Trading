@@ -21,6 +21,7 @@ export default {
           crimson: 'rgb(var(--accent-crimson) / <alpha-value>)',
           gold: 'rgb(var(--accent-gold) / <alpha-value>)',
           amber: 'rgb(var(--accent-amber) / <alpha-value>)',
+          blue: 'rgb(var(--accent-blue) / <alpha-value>)',
         },
         neon: {
           blue: '#00c8ff',
