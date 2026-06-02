@@ -4,29 +4,73 @@ import { BarChart3, TrendingUp, Calendar, IndianRupee, Download } from 'lucide-r
 import * as XLSX from 'xlsx';
 import { PageHeader } from '../components/layout/PageHeader';
 import { TableSkeleton } from '../components/ui/Skeleton';
-import { getInvoices } from '../lib/storage';
+import { getInvoices, getSettings } from '../lib/storage';
 import { formatCurrency, formatDateShort } from '../lib/utils';
-import type { InvoiceData } from '../types';
+import type { InvoiceData, UserSettings } from '../types';
 
 export function Reports() {
   const [invoices, setInvoices] = useState<InvoiceData[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'reportable'>('all');
+  const [settings, setSettings] = useState<UserSettings | null>(null);
 
-  useEffect(() => { getInvoices().then(d => { setInvoices(d); setLoading(false); }); }, []);
+  useEffect(() => { 
+    getInvoices().then(d => { setInvoices(d); setLoading(false); }); 
+    getSettings().then(setSettings);
+  }, []);
 
   const exportToExcel = () => {
-    const data = shown.map(inv => ({
-      'Invoice No': inv.invoiceNo,
-      'Date': inv.dateOfSupply,
-      'Customer Name': inv.receiverName,
-      'GSTIN': inv.receiverGstin,
-      'Place of Supply': inv.placeOfSupply,
-      'Total Amount': inv.totalAmount,
-      'Taxable Value': (inv.totalAmount || 0) / 1.18, // Simplified estimation
-      'GST Rate': inv.items?.[0]?.gstRate || 0,
-      'Reportable': inv.reportable ? 'Yes' : 'No'
-    }));
+    const companyStateCode = settings?.gstin?.slice(0, 2) || '';
+    const data = shown.map(inv => {
+      let subtotal = 0;
+      let gstAmount = 0;
+      const items = inv.items || [];
+      items.forEach((item: any) => {
+        const incRate = Number(item.inclusiveRate) || 0;
+        const isService = inv.invoiceType === 'service' || settings?.invoiceFormat === 'service';
+        const qty = isService ? 1 : (Number(item.qty) || 0);
+        const isInclusive = item.isInclusive !== false;
+        const taxableRate = isInclusive ? incRate / (1 + (item.gstRate / 100)) : incRate;
+        const itemTaxableTotal = taxableRate * qty;
+        subtotal += itemTaxableTotal;
+        gstAmount += itemTaxableTotal * (item.gstRate / 100);
+      });
+
+      const loading = Number(inv.loadingCharges) || 0;
+      const transport = Number(inv.transportCharges) || 0;
+      const other = Number(inv.otherCharges) || 0;
+      const hamali = Number(inv.hamali) || 0;
+
+      const taxableValue = subtotal + loading + transport + other;
+
+      const customerStateCode = inv.receiverStateCode || inv.receiverGstin?.slice(0, 2) || '';
+      const isInterstate = companyStateCode && customerStateCode && companyStateCode !== customerStateCode;
+
+      const cgst = isInterstate ? 0 : gstAmount / 2;
+      const sgst = isInterstate ? 0 : gstAmount / 2;
+      const igst = isInterstate ? gstAmount : 0;
+
+      const primaryGstRate = items.length > 0 ? (items[0].gstRate || 0) : 0;
+
+      return {
+        'Invoice No': inv.invoiceNo,
+        'Date': inv.dateOfSupply,
+        'Customer Name': inv.receiverName,
+        'GSTIN': inv.receiverGstin,
+        'Place of Supply': inv.placeOfSupply,
+        'Taxable Value': Number(taxableValue.toFixed(2)),
+        'CGST': Number(cgst.toFixed(2)),
+        'SGST': Number(sgst.toFixed(2)),
+        'IGST': Number(igst.toFixed(2)),
+        'Loading Charges': Number(loading.toFixed(2)),
+        'Transport Charges': Number(transport.toFixed(2)),
+        'Other Charges': Number(other.toFixed(2)),
+        'Hamali': Number(hamali.toFixed(2)),
+        'Total Amount': Number((inv.totalAmount || (taxableValue + gstAmount + hamali)).toFixed(2)),
+        'GST Rate': primaryGstRate,
+        'Reportable': inv.reportable ? 'Yes' : 'No'
+      };
+    });
     const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Sales Report");
