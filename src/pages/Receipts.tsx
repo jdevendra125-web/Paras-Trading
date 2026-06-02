@@ -21,9 +21,10 @@ interface DateTextInputProps {
   onChange: (isoValue: string) => void;
   placeholder?: string;
   className?: string;
+  autoFocus?: boolean;
 }
 
-function DateTextInput({ label, value, onChange, placeholder = "DD-MM-YYYY", className = "" }: DateTextInputProps) {
+function DateTextInput({ label, value, onChange, placeholder = "DD-MM-YYYY", className = "", autoFocus }: DateTextInputProps) {
   const toDisplay = (iso: string): string => {
     if (!iso) return "";
     const parts = iso.split("-");
@@ -34,7 +35,6 @@ function DateTextInput({ label, value, onChange, placeholder = "DD-MM-YYYY", cla
   };
 
   const [inputValue, setInputValue] = useState(toDisplay(value));
-  const hiddenInputRef = React.useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     setInputValue(toDisplay(value));
@@ -71,20 +71,6 @@ function DateTextInput({ label, value, onChange, placeholder = "DD-MM-YYYY", cla
     }
   };
 
-  const handleIconClick = () => {
-    if (hiddenInputRef.current) {
-      try {
-        if ('showPicker' in HTMLInputElement.prototype) {
-          hiddenInputRef.current.showPicker();
-        } else {
-          hiddenInputRef.current.click();
-        }
-      } catch (err) {
-        hiddenInputRef.current.click();
-      }
-    }
-  };
-
   return (
     <div className="relative w-full">
       <Input
@@ -96,20 +82,22 @@ function DateTextInput({ label, value, onChange, placeholder = "DD-MM-YYYY", cla
         placeholder={placeholder}
         className={className}
         maxLength={10}
+        autoFocus={autoFocus}
         suffix={
-          <Calendar 
-            size={16} 
-            className="text-slate-400 cursor-pointer hover:text-white transition-colors"
-            onClick={handleIconClick} 
-          />
+          <div className="relative flex items-center justify-center w-5 h-5">
+            <Calendar 
+              size={16} 
+              className="text-slate-400 cursor-pointer hover:text-white transition-colors"
+            />
+            <input
+              type="date"
+              value={value}
+              onChange={(e) => onChange(e.target.value)}
+              className="absolute inset-0 opacity-0 cursor-pointer"
+              style={{ width: '100%', height: '100%' }}
+            />
+          </div>
         }
-      />
-      <input
-        ref={hiddenInputRef}
-        type="date"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="absolute top-0 right-0 w-0 h-0 opacity-0 pointer-events-none"
       />
     </div>
   );
@@ -339,7 +327,7 @@ export function Receipts() {
       >
         <div className="space-y-3">
           <div className="grid grid-cols-2 gap-3">
-            <DateTextInput label="Date" value={form.date} onChange={(val) => setForm(prev => ({ ...prev, date: val }))} />
+            <DateTextInput label="Date" value={form.date} onChange={(val) => setForm(prev => ({ ...prev, date: val }))} autoFocus={!editing} />
             <Input label="Amount (₹)" type="number" value={form.amount} onChange={set('amount')} placeholder="0" />
           </div>
           <div className="grid grid-cols-2 gap-3">

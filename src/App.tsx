@@ -122,7 +122,7 @@ function NewInvoiceWrapper() {
     alert('Invoice saved successfully! Ready for next entry.');
   };
 
-  return <InvoiceForm data={invoiceData} onChange={setInvoiceData} onGenerate={handleGenerate} onSaveAndNew={handleSaveAndNew} defaultsLoading={!defaultsLoaded} />;
+  return <InvoiceForm data={invoiceData} onChange={setInvoiceData} onGenerate={handleGenerate} onSaveAndNew={handleSaveAndNew} defaultsLoading={!defaultsLoaded} autoFocusDate={true} />;
 }
 
 // ─── Preview Wrapper ──────────────────────────────────────────────────────────
